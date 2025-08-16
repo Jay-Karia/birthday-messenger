@@ -15,7 +15,7 @@ const createWindow = () => {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: './src/images/app-logo.jpg'
+    icon: './public/messages.png'
   });
 
   // and load the index.html of the app.

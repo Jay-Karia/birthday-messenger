@@ -1,15 +1,14 @@
 {
-  "name": "proj1-birthday",
-  "productName": "proj1-birthday",
+  "name": "birthday-messenger",
+  "productName": "birthday-messenger",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Send Watsapp messages and emails on birthdays.",
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "publish": "electron-forge publish"
   },
   "keywords": [],
   "author": {

@@ -1,4 +1,4 @@
-# Birthday Messanger
+# Birthday Messenger
 
 ## Tasks
 
