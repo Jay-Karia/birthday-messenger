@@ -9,3 +9,7 @@
 @media (prefers-color-scheme: light) {
   body { background: #ddd; color: black; }
 }
+
+body {
+  font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+}
