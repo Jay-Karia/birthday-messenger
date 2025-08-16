@@ -15,7 +15,7 @@ const createWindow = () => {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: './public/messages.png'
+    icon: path.join(__dirname, 'public', 'icon.png')
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));

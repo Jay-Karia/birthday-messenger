@@ -1,0 +1,6 @@
+flask
+sendgrid
+pillow
+dotenv
+requests
+groq
