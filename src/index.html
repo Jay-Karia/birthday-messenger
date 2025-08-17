@@ -13,15 +13,6 @@
     <!-- Toggle Theme mode -->
     <button
       id="toggle-dark-mode"
-      style="
-        position: absolute;
-        top: 16px;
-        right: 64px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-      "
       title="Toggle Theme"
     >
       <span style="vertical-align: middle">
@@ -52,15 +43,6 @@
     <!-- Logout Button -->
     <button
       id="logout-btn"
-      style="
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-      "
       title="Logout"
     >
       <span style="vertical-align: middle">
@@ -81,20 +63,8 @@
     <!-- Auth/Login Page -->
     <div
     id="auth-container"
-    style="
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        "
     >
-    <div
-    style="
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin-top: 32px;
-          "
+    <div class="auth-box"
       >
       <!-- SRM Logo -->
         <img
@@ -108,18 +78,17 @@
         id="user-input"
         type="text"
         placeholder="User ID"
-        style="margin-bottom: 10px; padding: 8px; width: 200px"
+        class="auth-input"
       />
       <input
         id="pass-input"
         type="password"
         placeholder="Password"
-        style="margin-bottom: 10px; padding: 8px; width: 200px"
+        class="auth-input"
       />
-      <button id="login-btn" style="padding: 8px 20px">Login</button>
+      <button id="login-btn" >Login</button>
       <div
         id="login-error"
-        style="color: red; margin-top: 10px; display: none"
       ></div>
     </div>
     </div>
@@ -130,45 +99,26 @@
         <img
           src="../public/srm-logo.png"
           alt="SRM Logo"
-          style="height: 44px"
+          style="height: 34px; margin-left: 5px;"
         />
 
-      <div style="margin: 20px auto; max-width: 320px; text-align: center">
+      <div class="birthday-container">
         <label
           for="birthday"
-          style="font-size: 1.1em; margin-bottom: 8px; display: block"
+          id="birthday-label"
+          
           >Select a birthday:</label
         >
         <div
-          style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-          "
+         class="birthday-box"
         >
           <input
             type="date"
             id="birthday"
             name="birthday"
-            style="
-              padding: 8px;
-              font-size: 1em;
-              border-radius: 4px;
-              border: 1px solid #ccc;
-            "
           />
           <button
             id="find-btn"
-            style="
-              padding: 8px 20px;
-              font-size: 1em;
-              border-radius: 4px;
-              border: 1px solid #555;
-              background: #555;
-              color: #fff;
-              cursor: pointer;
-            "
           >
             Find
           </button>
