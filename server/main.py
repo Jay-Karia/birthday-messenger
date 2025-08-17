@@ -1,5 +1,5 @@
 import asyncio
-from flask import Flask, request
+from flask import Flask, request, session, redirect, jsonify
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail, Attachment, FileContent, FileName, FileType, Disposition
 import base64
@@ -11,6 +11,11 @@ from components.whatsapp_msg import send_whatsapp
 from components.text_ai import text_gen
 
 app = Flask(__name__)
+app.secret_key = os.getenv("APP_SECRET")
+
+# Fixed credentials
+AUTH_USER = os.getenv("AUTH_USER")
+AUTH_PASS = os.getenv("AUTH_PASS")
 
 # Load environment variables
 load_dotenv()
@@ -35,8 +40,32 @@ def create_birthday_card(name, message):
     img.save(output_path)
     return output_path
 
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.json
+    user = data.get("user")
+    password = data.get("password")
+    if user == AUTH_USER and password == AUTH_PASS:
+        session["authenticated"] = True
+        return {"message": "Login successful"}, 200
+    else:
+        return {"error": "Invalid credentials"}, 401
+
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.pop("authenticated", None)
+    return {"message": "Logged out"}, 200
+
+def require_auth():
+    if not session.get("authenticated"):
+        return jsonify({"error": "Unauthorized"}), 401
+
 @app.route("/send_card", methods=["POST"])
 def send_email():
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+
     data = request.json
     recipient = data.get("recipient")
     name = data.get("name", "Friend")
