@@ -6,8 +6,8 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-packager . --icon=src/icons/icon.ico --out=dist --overwrite",
-    "make": "electron-forge make",
+    "package": "electron-packager . --icon=src/icons/icon.ico --out=out --overwrite",
+    "make": "electron-forge make --icon=src/icons/icon.ico",
     "publish": "electron-forge publish"
   },
   "keywords": [],
