@@ -7,6 +7,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('login-error');
   const logoutBtn = document.getElementById('logout-btn');
 
+  // Auth Cache
+  const CACHE_KEY = 'auth_cache';
+  const CACHE_DURATION_MINUTES = 60; // 1 hour
+
+  function setAuthCache() {
+    const expires = Date.now() + CACHE_DURATION_MINUTES * 60 * 1000;
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ expires }));
+  }
+
+  function clearAuthCache() {
+    localStorage.removeItem(CACHE_KEY);
+  }
+
+  function isAuthCached() {
+    const cache = localStorage.getItem(CACHE_KEY);
+    if (!cache) return false;
+    try {
+      const { expires } = JSON.parse(cache);
+      return Date.now() < expires;
+    } catch {
+      return false;
+    }
+  }
+
+  // On load, check cache
+  if (isAuthCached()) {
+    authContainer.style.display = 'none';
+    mainContainer.style.display = '';
+  }
+
   loginBtn.addEventListener('click', async () => {
     const user = userInput.value.trim();
     const password = passInput.value;
@@ -21,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (res.ok) {
+        setAuthCache();
         authContainer.style.display = 'none';
         mainContainer.style.display = '';
       } else {
@@ -39,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         credentials: 'include'
       });
+      clearAuthCache();
       mainContainer.style.display = 'none';
       authContainer.style.display = 'flex';
       userInput.value = '';

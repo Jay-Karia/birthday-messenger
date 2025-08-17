@@ -6,7 +6,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package",
+    "package": "electron-packager . --platform=win32 --arch=x64 --icon=src/icons/icon.ico --out=dist",
     "make": "electron-forge make",
     "publish": "electron-forge publish"
   },
