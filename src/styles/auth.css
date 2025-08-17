@@ -1,0 +1,39 @@
+#logout-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+#auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 32px;
+}
+
+.auth-input {
+  margin-bottom: 10px;
+  padding: 8px;
+  width: 200px;
+}
+
+#login-btn {
+  padding: 8px 20px;
+}
+
+#login-error {
+  color: red;
+  margin-top: 10px;
+  display: none;
+}
