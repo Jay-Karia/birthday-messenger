@@ -10,6 +10,43 @@
     <link rel="stylesheet" type="text/css" href="./index.css" />
   </head>
   <body>
+    <button
+      id="toggle-dark-mode"
+      style="
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+      "
+    >
+      <span style="vertical-align: middle">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          style="vertical-align: middle"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <circle
+            cx="10"
+            cy="10"
+            r="7"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+          />
+          <path
+            d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
+            stroke="currentColor"
+            stroke-width="2"
+          />
+        </svg>
+      </span>
+    </button>
     <!-- Auth/Login Page -->
     <div
       id="auth-container"
@@ -43,6 +80,7 @@
 
     <!-- Main App Content -->
     <div id="main-container" style="display: none">
+      <!-- Logout Button -->
       <button
         id="logout-btn"
         style="
@@ -87,80 +125,6 @@
               stroke="currentColor"
               stroke-width="2"
               fill="none"
-            />
-          </svg>
-        </span>
-      </button>
-      <button
-        id="toggle-dark-mode"
-        style="
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-        "
-      >
-        <span style="vertical-align: middle">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            style="vertical-align: middle"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="10"
-              cy="10"
-              r="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <path
-              d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
-              stroke="currentColor"
-              stroke-width="2"
-            />
-          </svg>
-        </span>
-      </button>
-      <button
-        id="toggle-dark-mode"
-        style="
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-        "
-      >
-        <span style="vertical-align: middle">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            style="vertical-align: middle"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <circle
-              cx="10"
-              cy="10"
-              r="7"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-            <path
-              d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
-              stroke="currentColor"
-              stroke-width="2"
             />
           </svg>
         </span>
