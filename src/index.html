@@ -10,17 +10,19 @@
     <link rel="stylesheet" type="text/css" href="./index.css" />
   </head>
   <body>
+    <!-- Toggle Theme mode -->
     <button
       id="toggle-dark-mode"
       style="
         position: absolute;
         top: 16px;
-        right: 16px;
+        right: 64px;
         background: none;
         border: none;
         cursor: pointer;
         padding: 8px;
       "
+      title="Toggle Theme"
     >
       <span style="vertical-align: middle">
         <svg
@@ -47,17 +49,60 @@
         </svg>
       </span>
     </button>
+    <!-- Logout Button -->
+    <button
+      id="logout-btn"
+      style="
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+      "
+      title="Logout"
+    >
+      <span style="vertical-align: middle">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          style="vertical-align: middle"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M7 10h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M11 7l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="3" y="4" width="6" height="12" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+        </svg>
+      </span>
+    </button>
     <!-- Auth/Login Page -->
     <div
-      id="auth-container"
-      style="
+    id="auth-container"
+    style="
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 100vh;
-      "
+        "
     >
+    <div
+    style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 32px;
+          "
+      >
+      <!-- SRM Logo -->
+        <img
+          src="../public/srm-logo.png"
+          alt="SRM Logo"
+          style="height: 184px"
+        />
+      </div>
       <h2>Login</h2>
       <input
         id="user-input"
@@ -77,58 +122,16 @@
         style="color: red; margin-top: 10px; display: none"
       ></div>
     </div>
+    </div>
 
     <!-- Main App Content -->
     <div id="main-container" style="display: none">
-      <!-- Logout Button -->
-      <button
-        id="logout-btn"
-        style="
-          position: absolute;
-          top: 16px;
-          left: 16px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 8px;
-        "
-        title="Logout"
-      >
-        <span style="vertical-align: middle">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            style="vertical-align: middle"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M7 10h6"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <path
-              d="M11 7l3 3-3 3"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <rect
-              x="3"
-              y="4"
-              width="6"
-              height="12"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="2"
-              fill="none"
-            />
-          </svg>
-        </span>
-      </button>
+      <!-- SRM Logo -->
+        <img
+          src="../public/srm-logo.png"
+          alt="SRM Logo"
+          style="height: 64px"
+        />
 
       <div style="margin: 20px auto; max-width: 320px; text-align: center">
         <label
