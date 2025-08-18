@@ -66,6 +66,7 @@ def send_email():
     if auth_error:
         return auth_error
 
+    # TODO: the body should be a array
     data = request.json
     recipient = data.get("recipient")
     name = data.get("name", "Friend")
