@@ -88,3 +88,14 @@ document.getElementById('reset-to-system').addEventListener('click', async () =>
   await window.darkMode.system()
   document.getElementById('theme-source').innerHTML = 'System'
 })
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Handle external links
+  document.querySelectorAll('a[target="_blank"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = link.getAttribute('href');
+      window.electron.openExternal(url);
+    });
+  });
+});

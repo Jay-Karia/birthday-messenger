@@ -6,6 +6,11 @@ if (require('electron-squirrel-startup')) { // eslint-disable-line global-requir
   app.quit();
 }
 
+ipcMain.handle('open-external', (_, url) => {
+  shell.openExternal(url)
+})
+
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
