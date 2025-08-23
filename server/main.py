@@ -241,27 +241,32 @@ def send_email():
         Disposition("attachment")
     )
 
-    email = Mail(
-        from_email=FROM_EMAIL,
-        to_emails=recipient,
-        subject=subject,
-        html_content=f"<p>{message}</p>"
-    )
-    email.attachment = attachment
+    # Prepare all email recipients (main + extra)
+    all_recipients = [recipient] + extra_recipients
 
-    # Send WhatsApp (best-effort)
-    try:
-        send_whatsapp(message, str(recipient_phone), card_path)
-    except Exception:
-        # Log or ignore; for now we don't abort the email
-        pass
+    # Send WhatsApp (best-effort) to all phones
+    all_phones = [str(recipient_phone)] + extra_phones
+    for phone in all_phones:
+        try:
+            send_whatsapp(message, phone, card_path)
+        except Exception:
+            pass  # Ignore WhatsApp errors
 
+    # Send email to all recipients
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(email)
+        for email_addr in all_recipients:
+            email = Mail(
+                from_email=FROM_EMAIL,
+                to_emails=email_addr,
+                subject=subject,
+                html_content=f"<p>{message}</p>"
+            )
+            email.attachment = attachment
+            sg.send(email)
         return jsonify({
-            "status": response.status_code,
-            "message": "Email sent successfully!"
+            "status": 200,
+            "message": "Email sent successfully to all recipients!"
         }), 200
     except Exception as e:
         return jsonify({"error": f"Email send failed: {e}"}), 500
