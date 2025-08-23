@@ -241,4 +241,22 @@ document.addEventListener('DOMContentLoaded', () => {
       resultsContainer.innerHTML = '';
     });
   }
+
+  // --------- Send Message ---------
+  const sendBtn = document.getElementById('send-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', () => {
+      // Get the results array
+      if (!resultsContainer) return;
+
+      const results = Array.from(resultsContainer.querySelectorAll('li')).map(li => li.textContent || '');
+      if (results.length === 0) {
+        alert('No results to send. Please find birthdays first.');
+        return;
+      }
+
+      // Alert the results (replace with actual send logic)
+      alert('Sending the following results:\n' + results.join('\n'));
+    });
+  }
 });
