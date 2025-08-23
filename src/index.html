@@ -11,10 +11,7 @@
   </head>
   <body>
     <!-- Toggle Theme mode -->
-    <button
-      id="toggle-dark-mode"
-      title="Toggle Theme"
-    >
+    <button id="toggle-dark-mode" title="Toggle Theme">
       <span style="vertical-align: middle">
         <svg
           width="20"
@@ -40,11 +37,9 @@
         </svg>
       </span>
     </button>
+
     <!-- Logout Button -->
-    <button
-      id="logout-btn"
-      title="Logout"
-    >
+    <button id="logout-btn" title="Logout">
       <span style="vertical-align: middle">
         <svg
           width="20"
@@ -54,24 +49,37 @@
           style="vertical-align: middle"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <rect x="3.5" y="5.5" width="7" height="9" rx="1.5" stroke="currentColor" stroke-width="1.6" fill="none"/>
-          <path d="M10 10h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-          <path d="M14 8l2 2-2 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect
+            x="3.5"
+            y="5.5"
+            width="7"
+            height="9"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.6"
+            fill="none"
+          />
+          <path
+            d="M10 10h6"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+          />
+            <path
+            d="M14 8l2 2-2 2"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </span>
     </button>
+
     <!-- Auth/Login Page -->
-    <div
-    id="auth-container"
-    >
-    <div class="auth-box"
-      >
-      <!-- SRM Logo -->
-        <img
-          src="../public/srm-logo.png"
-          alt="SRM Logo"
-          style="height: 104px"
-        />
+    <div id="auth-container">
+      <div class="auth-box">
+        <img src="../public/srm-logo.png" alt="SRM Logo" style="height: 104px" />
       </div>
       <h2>Login</h2>
       <input
@@ -86,66 +94,66 @@
         placeholder="Password"
         class="auth-input"
       />
-      <button id="login-btn" >Login</button>
-      <div
-        id="login-error"
-      ></div>
-    </div>
+      <button id="login-btn">Login</button>
+      <div id="login-error"></div>
     </div>
 
     <!-- Main App Content -->
     <div id="main-container" style="display: none">
-      <!-- SRM Logo -->
-        <img
-          src="../public/srm-logo.png"
-          alt="SRM Logo"
-          style="height: 34px; margin-left: 5px;"
-        />
+      <img
+        src="../public/srm-logo.png"
+        alt="SRM Logo"
+        style="height: 34px; margin-left: 5px"
+      />
 
       <div class="birthday-container">
-        <label
-          for="birthday"
-          id="birthday-label"
-          
-          >Select a birthday:</label
-        >
-        <div
-         class="birthday-box"
-        >
-          <input
-            type="date"
-            id="birthday"
-            name="birthday"
-          />
-          <button
-            id="find-btn"
-          >
-            Find
+        <label for="birthday" id="birthday-label">Select a birthday:</label>
+        <div class="birthday-box">
+          <input type="date" id="birthday" name="birthday" />
+          <button id="find-btn" type="button">
+            <span class="label">Find</span>
           </button>
         </div>
       </div>
 
-       <!-- Results -->
       <div id="results-container" class="results"></div>
 
-      <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px;">
-        <!-- Clear -->
+      <div
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+          margin-top: 20px;
+        "
+      >
         <button id="clear-results-btn" type="button">
           <span class="icon" aria-hidden="true">✕</span>
           Clear
         </button>
-        <!-- Send Button -->
-        <!-- Send Button -->
-<button id="send-btn" type="button">
-  <span class="label">Send</span>
-</button>
-      </div>
 
+        <button id="send-btn" type="button">
+          <span class="label">Send</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Footer -->
-    <footer style="position: fixed; bottom: 16px; right: 24px; z-index: 100; padding: 8px 16px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); font-size: 14px;">
-      <a href="https://github.com/Jay-Karia/birthday-messenger" target="_blank">View on GitHub</a>
+    <footer
+      style="
+        position: fixed;
+        bottom: 16px;
+        right: 24px;
+        z-index: 100;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+      "
+    >
+      <a
+        href="https://github.com/Jay-Karia/birthday-messenger"
+        target="_blank"
+        >View on GitHub</a
+      >
     </footer>
 
     <script src="renderer.js"></script>

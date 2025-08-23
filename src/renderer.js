@@ -83,10 +83,14 @@ function renderResultsList(container, title, people) {
       const email = p.email ? ` - ${p.email}` : "";
       const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
       const fatherEmail = p.father_email
-        ? `<br><small>Father Email: ${p.father_email}${p.father_phone ? " (" + p.father_phone + ")" : ""}</small>`
+        ? `<br><small>Father Email: ${p.father_email}${
+            p.father_phone ? " (" + p.father_phone + ")" : ""
+          }</small>`
         : "";
       const motherEmail = p.mother_email
-        ? `<br><small>Mother Email: ${p.mother_email}${p.mother_phone ? " (" + p.mother_phone + ")" : ""}</small>`
+        ? `<br><small>Mother Email: ${p.mother_email}${
+            p.mother_phone ? " (" + p.mother_phone + ")" : ""
+          }</small>`
         : "";
       return `<li>
         <strong>${name}</strong>${email}${phone}
@@ -111,7 +115,7 @@ async function fetchBirthdays(dateValue, container) {
     renderResults(
       container,
       "You are not authenticated. Please login again.",
-      "error",
+      "error"
     );
     return;
   }
@@ -140,7 +144,7 @@ async function fetchBirthdays(dateValue, container) {
     renderResultsList(
       container,
       `${data.count} birthday(s) on ${data.date || data.month_day}`,
-      data.people,
+      data.people
     );
   } catch (e) {
     console.error("Fetch error:", e);
@@ -253,13 +257,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (findBtn && birthdayInput) {
     function runFind() {
       if (!birthdayInput) return;
-      // Optional loading state (uncomment if you add CSS spinner for find):
-      // findBtn.classList.add("loading");
-      // findBtn.disabled = true;
       fetchBirthdays(birthdayInput.value, resultsContainer).then(() => {
         updateActionButtonsVisibility();
-        // findBtn.classList.remove("loading");
-        // findBtn.disabled = false;
       });
     }
     findBtn.addEventListener("click", runFind);
@@ -270,11 +269,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- External Links ----------
   document.querySelectorAll('a[target="_blank"]').forEach((link) => {
-    link.addEventListener("click", (e) => {
+    link.addEventListener("click", async (e) => {
       e.preventDefault();
       const url = link.getAttribute("href");
-      if (url && window.electron && window.electron.openExternal) {
-        window.electron.openExternal(url);
+      if (!url) return;
+      if (window.electron && window.electron.openExternal) {
+        const result = await window.electron.openExternal(url);
+        if (!result || result.ok !== true) {
+          try {
+            window.open(url, "_blank", "noopener");
+          } catch {}
+        }
+      } else {
+        try {
+          window.open(url, "_blank", "noopener");
+        } catch {}
       }
     });
   });
@@ -297,7 +306,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      // Build single payload (using first person) – adjust if you add batch support
       const p = lastResultsPeople[0] || {};
       const payload = {
         name: p.name || "",
@@ -309,7 +317,6 @@ document.addEventListener("DOMContentLoaded", () => {
         mother_phone: p.mother_phone || "",
       };
 
-      // Enter loading state
       sendBtn.classList.add("loading");
       sendBtn.disabled = true;
       sendBtn.setAttribute("aria-busy", "true");
