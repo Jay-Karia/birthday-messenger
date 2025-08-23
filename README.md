@@ -2,12 +2,11 @@
 
 ## Tasks
 
-1. Connect database
+1. Connect excel
 
 ## Questions
 
-1. Which database?
-2. Automatic sending?
+1. Automatic sending?
 
 ## Contributers
 
