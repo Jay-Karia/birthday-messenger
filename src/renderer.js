@@ -233,4 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
+  // --------- Clear Results ---------
+  const clearBtn = document.getElementById('clear-btn');
+  if (clearBtn && resultsContainer) {
+    clearBtn.addEventListener('click', () => {
+      resultsContainer.innerHTML = '';
+    });
+  }
 });
