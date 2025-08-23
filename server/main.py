@@ -7,6 +7,8 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 from dotenv import load_dotenv
 from components.whatsapp_msg import send_whatsapp
+from datetime import datetime
+import csv
 
 from components.text_ai import text_gen
 
@@ -59,6 +61,80 @@ def logout():
 def require_auth():
     if not session.get("authenticated"):
         return jsonify({"error": "Unauthorized"}), 401
+    
+CSV_PATH = "../data/dummy.csv"
+@app.route("/filter", methods=["GET"])
+def filter_birthdays():
+    # Check authentication
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+        
+    # Get date parameter from query string
+    date_str = request.args.get("date")
+    
+    if not date_str:
+        return jsonify({"error": "Date parameter is required"}), 400
+    
+    try:
+        # Handle different date formats
+        if len(date_str) == 10 and date_str[4] == '-' and date_str[7] == '-':
+            selected_date = datetime.strptime(date_str, "%Y-%m-%d")
+            month_day = selected_date.strftime("%m-%d")
+        elif len(date_str) == 5 and date_str[2] == '-':
+            month_day = date_str
+            datetime.strptime(f"2000-{month_day}", "%Y-%m-%d")
+        else:
+            return jsonify({"error": "Invalid date format. Use MM-DD or YYYY-MM-DD"}), 400
+        
+        # Check if CSV file exists
+        if not os.path.exists(CSV_PATH):
+            return jsonify({"error": "Birthday data not found"}), 404
+            
+        # Define column names based on the CSV structure
+        columns = ["id", "name", "app_id", "birthday", "email", "phone", 
+                  "father_email", "father_phone", "mother_email", "mother_phone"]
+            
+        # Read and filter the CSV data
+        matching_people = []
+        with open(CSV_PATH, 'r') as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if len(row) >= 4:  # Ensure row has at least 4 columns (including birthday)
+                    try:
+                        # Birthday is in column index 3
+                        birthday = datetime.strptime(row[3], "%Y-%m-%d")
+                        if birthday.strftime("%m-%d") == month_day:
+                            # Create a structured person object
+                            person = {
+                                "id": row[0],
+                                "name": row[1],
+                                "app_id": row[2],
+                                "birthday": row[3],
+                                "email": row[4] if len(row) > 4 else "",
+                                "phone": row[5] if len(row) > 5 else "",
+                                "father_email": row[6] if len(row) > 6 else "",
+                                "father_phone": row[7] if len(row) > 7 else "",
+                                "mother_email": row[8] if len(row) > 8 else "",
+                                "mother_phone": row[9] if len(row) > 9 else ""
+                            }
+                            matching_people.append(person)
+                    except ValueError:
+                        # Skip rows with invalid date format
+                        continue
+        
+        # Format to show we're matching by month-day
+        formatted_date = datetime.strptime(f"2000-{month_day}", "%Y-%m-%d").strftime("%B %d")
+        
+        return jsonify({
+            "date": formatted_date,
+            "month_day": month_day,
+            "count": len(matching_people),
+            "people": matching_people
+        })
+        
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use MM-DD or YYYY-MM-DD"}), 400
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
