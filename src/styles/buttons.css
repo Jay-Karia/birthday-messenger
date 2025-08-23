@@ -30,8 +30,8 @@
    Primary Send Button (Inline)
    ---------------------------- */
 #send-btn {
-  padding: 10px 24px;
-  font-size: 1rem;
+  padding: 8px 18px;
+  font-size: 0.95rem;
   font-weight: 600;
   line-height: 1.1;
   border-radius: 8px;
@@ -102,4 +102,118 @@ body.dark #send-btn:hover {
 }
 body.dark #send-btn:focus-visible {
   outline: 3px solid #4dd790;
+}
+
+#clear-results-btn {
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.1;
+  border-radius: 6px;
+  border: 1px solid #b4b7bc;
+  background: linear-gradient(#f9f9fa, #f2f3f5);
+  color: #2d3338;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: .2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.02);
+  transition: background .18s, color .18s, border-color .18s,
+              box-shadow .22s, transform .12s ease;
+  position: relative;
+  user-select: none;
+}
+
+#clear-results-btn:hover {
+  background: linear-gradient(#ffffff, #eceef0);
+  border-color: #a5a9af;
+  box-shadow: 0 2px 4px rgba(0,0,0,.10);
+}
+
+#clear-results-btn:active {
+  transform: translateY(1px);
+  background: linear-gradient(#f1f2f3, #e6e8ea);
+  box-shadow: 0 1px 2px rgba(0,0,0,.14);
+}
+
+#clear-results-btn:focus-visible {
+  outline: 3px solid #c7e3ff;
+  outline-offset: 2px;
+}
+
+#clear-results-btn:disabled,
+#clear-results-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: .55;
+  box-shadow: none;
+  background: #f1f2f3;
+  color: #7a7f83;
+}
+
+/* Optional subtle “wave” feedback on hover (can remove) */
+#clear-results-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 35% 30%, rgba(0,0,0,.05), transparent 70%);
+  opacity: 0;
+  border-radius: inherit;
+  transition: opacity .35s;
+  pointer-events: none;
+}
+#clear-results-btn:hover::after {
+  opacity: 1;
+}
+
+/* Dark mode */
+body.dark #clear-results-btn {
+  background: linear-gradient(#3d4146, #35393d);
+  border-color: #555a60;
+  color: #e5e7ea;
+  box-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03);
+}
+body.dark #clear-results-btn:hover {
+  background: linear-gradient(#454a4f, #3c4045);
+  border-color: #666c73;
+  box-shadow: 0 2px 5px rgba(0,0,0,.6);
+}
+body.dark #clear-results-btn:active {
+  background: linear-gradient(#3a3f43, #33363a);
+  box-shadow: 0 1px 2px rgba(0,0,0,.7);
+}
+body.dark #clear-results-btn:focus-visible {
+  outline: 3px solid #3d8dff;
+  outline-offset: 2px;
+}
+body.dark #clear-results-btn:disabled {
+  background: #3a3d40;
+  border-color: #4d5256;
+  color: #7f868c;
+  opacity: .55;
+}
+
+/* (Optional) Compact size modifier */
+#clear-results-btn.compact {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  border-radius: 5px;
+}
+
+/* (Optional) Icon slot example
+   <button id="clear-results-btn"><span class="icon" aria-hidden="true">✕</span>Clear</button>
+*/
+#clear-results-btn .icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  line-height: 1;
+  opacity: .8;
+  font-size: 0.75rem;
+  justify-content: center;
+  align-items: center;
+  transform: translateY(-1px);
+}
+#clear-results-btn:hover .icon {
+  opacity: 1;
 }
