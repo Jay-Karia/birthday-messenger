@@ -5,7 +5,6 @@ const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
 
 // ---------- State (Results Cache) ----------
-// ADDED: Keeps the raw people objects from the last successful /filter call
 let lastResultsPeople = [];
 
 // ---------- Token Helpers ----------
@@ -83,11 +82,12 @@ function renderResultsList(container, title, people) {
       const name = p.name || "(No name)";
       const email = p.email ? ` - ${p.email}` : "";
       const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
-
-      // Add father and mother email info if present
-      const fatherEmail = p.father_email ? `<br><small>Father Email: ${p.father_email} (${p.father_phone})</small>` : "";
-      const motherEmail = p.mother_email ? `<br><small>Mother Email: ${p.mother_email} (${p.mother_phone})</small>` : "";
-
+      const fatherEmail = p.father_email
+        ? `<br><small>Father Email: ${p.father_email}${p.father_phone ? " (" + p.father_phone + ")" : ""}</small>`
+        : "";
+      const motherEmail = p.mother_email
+        ? `<br><small>Mother Email: ${p.mother_email}${p.mother_phone ? " (" + p.mother_phone + ")" : ""}</small>`
+        : "";
       return `<li>
         <strong>${name}</strong>${email}${phone}
         ${fatherEmail}${motherEmail}
@@ -102,9 +102,7 @@ function renderResultsList(container, title, people) {
 
 // ---------- Birthday Fetch ----------
 async function fetchBirthdays(dateValue, container) {
-  // Reset cached people before new fetch attempt
   lastResultsPeople = [];
-
   if (!dateValue) {
     renderResults(container, "Please select a date.", "error");
     return;
@@ -118,7 +116,6 @@ async function fetchBirthdays(dateValue, container) {
     return;
   }
 
-  // Convert YYYY-MM-DD -> MM-DD
   let param = dateValue;
   if (dateValue.length === 10 && dateValue[4] === "-" && dateValue[7] === "-") {
     param = dateValue.slice(5);
@@ -128,9 +125,7 @@ async function fetchBirthdays(dateValue, container) {
   try {
     const res = await fetch(`http://localhost:8000/filter?date=${param}`, {
       method: "GET",
-      headers: {
-        Authorization: "Bearer " + getToken(),
-      },
+      headers: { Authorization: "Bearer " + getToken() },
     });
     const data = await res.json();
     if (!res.ok) {
@@ -141,23 +136,20 @@ async function fetchBirthdays(dateValue, container) {
       renderResults(container, "No birthdays found for this date.", "empty");
       return;
     }
-
-    // Store full people objects (including father/mother contacts)
     lastResultsPeople = Array.isArray(data.people) ? data.people : [];
-
     renderResultsList(
       container,
       `${data.count} birthday(s) on ${data.date || data.month_day}`,
       data.people,
     );
-  } catch {
+  } catch (e) {
+    console.error("Fetch error:", e);
     renderResults(container, "Network error while fetching data.", "error");
   }
 }
 
 // ---------- Initialization ----------
 document.addEventListener("DOMContentLoaded", () => {
-  // Core elements
   const authContainer = document.getElementById("auth-container");
   const mainContainer = document.getElementById("main-container");
   const loginBtn = document.getElementById("login-btn");
@@ -170,11 +162,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const findBtn = document.getElementById("find-btn");
   const birthdayInput = document.getElementById("birthday");
   const resultsContainer = document.getElementById("results-container");
-
   const clearBtn = document.getElementById("clear-results-btn");
   const sendBtn = document.getElementById("send-btn");
 
-  // Helper: Show/hide send & clear buttons based on presence of results
   function updateActionButtonsVisibility() {
     const hasResultItem =
       resultsContainer && !!resultsContainer.querySelector("li");
@@ -183,27 +173,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clearBtn) clearBtn.style.display = displayValue;
   }
 
-  // Initially hide buttons (no results yet)
   if (sendBtn) sendBtn.style.display = "none";
   if (clearBtn) clearBtn.style.display = "none";
 
-  // Observe results container for changes to auto-toggle visibility
   if (resultsContainer) {
     const observer = new MutationObserver(updateActionButtonsVisibility);
     observer.observe(resultsContainer, { childList: true, subtree: true });
   }
 
-  // Apply cached theme early
   const cachedTheme = getThemeCache();
   if (cachedTheme) applyThemeClass(cachedTheme);
 
-  // Show main if auth cache + token
   if (isAuthCached() && getToken() && authContainer && mainContainer) {
     authContainer.style.display = "none";
     mainContainer.style.display = "";
   }
 
-  // --------- Login ----------
+  // ---------- Login ----------
   if (loginBtn) {
     loginBtn.addEventListener("click", async () => {
       if (!userInput || !passInput || !loginError) return;
@@ -211,7 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const password = passInput.value;
       loginError.style.display = "none";
       loginError.textContent = "";
-
       try {
         const res = await fetch("http://localhost:8000/login", {
           method: "POST",
@@ -235,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --------- Logout ----------
+  // ---------- Logout ----------
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       const token = getToken();
@@ -245,11 +230,11 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: token ? { Authorization: "Bearer " + token } : {},
         });
       } catch {
-        // ignore network errors on logout
+        // ignore
       }
       clearToken();
       clearAuthCache();
-      lastResultsPeople = []; // ADDED reset
+      lastResultsPeople = [];
       if (mainContainer) mainContainer.style.display = "none";
       if (authContainer) authContainer.style.display = "flex";
       if (userInput) userInput.value = "";
@@ -259,28 +244,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --------- Theme Toggle ----------
+  // ---------- Theme Toggle ----------
   if (toggleDarkModeBtn) {
     toggleDarkModeBtn.addEventListener("click", toggleThemeElectronBridge);
   }
 
-  // --------- Find Birthdays ----------
+  // ---------- Find Birthdays ----------
   if (findBtn && birthdayInput) {
-    findBtn.addEventListener("click", () => {
-      fetchBirthdays(birthdayInput.value, resultsContainer).then(
-        updateActionButtonsVisibility,
-      );
-    });
+    function runFind() {
+      if (!birthdayInput) return;
+      // Optional loading state (uncomment if you add CSS spinner for find):
+      // findBtn.classList.add("loading");
+      // findBtn.disabled = true;
+      fetchBirthdays(birthdayInput.value, resultsContainer).then(() => {
+        updateActionButtonsVisibility();
+        // findBtn.classList.remove("loading");
+        // findBtn.disabled = false;
+      });
+    }
+    findBtn.addEventListener("click", runFind);
     birthdayInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        fetchBirthdays(birthdayInput.value, resultsContainer).then(
-          updateActionButtonsVisibility,
-        );
-      }
+      if (e.key === "Enter") runFind();
     });
   }
 
-  // --------- External Links ----------
+  // ---------- External Links ----------
   document.querySelectorAll('a[target="_blank"]').forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
@@ -291,25 +279,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // --------- Clear Results ---------
+  // ---------- Clear Results ----------
   if (clearBtn && resultsContainer) {
     clearBtn.addEventListener("click", () => {
       resultsContainer.innerHTML = "";
-      lastResultsPeople = []; // ADDED reset
+      lastResultsPeople = [];
       updateActionButtonsVisibility();
     });
   }
 
-  // --------- Send Message ---------
+  // ---------- Send Message ----------
   if (sendBtn) {
-    sendBtn.addEventListener("click", () => {
+    sendBtn.addEventListener("click", async () => {
+      if (sendBtn.classList.contains("loading")) return;
       if (!lastResultsPeople || lastResultsPeople.length === 0) {
         alert("No results to send. Please find birthdays first.");
         return;
       }
 
-      // Construct payload including parent contact details
-      const payload = lastResultsPeople.map((p) => ({
+      // Build single payload (using first person) – adjust if you add batch support
+      const p = lastResultsPeople[0] || {};
+      const payload = {
         name: p.name || "",
         recipient: p.email || "",
         recipient_phone: p.phone || "",
@@ -317,27 +307,46 @@ document.addEventListener("DOMContentLoaded", () => {
         father_phone: p.father_phone || "",
         mother_email: p.mother_email || "",
         mother_phone: p.mother_phone || "",
-      }));
+      };
 
-      // Send Card
-      fetch("http://localhost:8000/send_card", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + getToken(),
-        },
-        body: JSON.stringify(payload[0]),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          alert(JSON.stringify(data))
-        })
-        .catch(() => {
-          alert("Network error while sending message.");
+      // Enter loading state
+      sendBtn.classList.add("loading");
+      sendBtn.disabled = true;
+      sendBtn.setAttribute("aria-busy", "true");
+      sendBtn.setAttribute("aria-disabled", "true");
+
+      try {
+        const res = await fetch("http://localhost:8000/send_card", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + getToken(),
+          },
+          body: JSON.stringify(payload),
         });
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = { error: "Invalid JSON response" };
+        }
+        if (!res.ok) {
+          alert("Send failed");
+          console.error("Send error detail:", data);
+          return;
+        }
+        alert("Send succeeded");
+      } catch (err) {
+        console.error("Network/send error:", err);
+        alert("Network error while sending message.");
+      } finally {
+        sendBtn.classList.remove("loading");
+        sendBtn.disabled = false;
+        sendBtn.removeAttribute("aria-busy");
+        sendBtn.removeAttribute("aria-disabled");
+      }
     });
   }
 
-  // Final initial visibility sync
   updateActionButtonsVisibility();
 });
