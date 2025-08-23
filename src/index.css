@@ -48,3 +48,15 @@ body {
   max-width: 320px;
   text-align: center;
 }
+
+.results {
+  max-width: 480px;
+  margin: 12px auto 40px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.results .loading { opacity: 0.8; font-style: italic; }
+.results ul { padding-left: 18px; margin: 8px 0; }
+.results li { margin-bottom: 4px; }
+.results .error { color: #c0392b; }
+.results .empty { opacity: 0.7; }
