@@ -82,9 +82,16 @@ function renderResultsList(container, title, people) {
     .map((p) => {
       const name = p.name || "(No name)";
       const email = p.email ? ` - ${p.email}` : "";
-      const phone = p.phone ? ` (${p.phone})` : "";
-      // We deliberately omit father/mother contact info in the visible UI list for brevity.
-      return `<li><strong>${name}</strong>${email}${phone}</li>`;
+      const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
+
+      // Add father and mother email info if present
+      const fatherEmail = p.father_email ? `<br><small>Father Email: ${p.father_email} (${p.father_phone})</small>` : "";
+      const motherEmail = p.mother_email ? `<br><small>Mother Email: ${p.mother_email} (${p.mother_phone})</small>` : "";
+
+      return `<li>
+        <strong>${name}</strong>${email}${phone}
+        ${fatherEmail}${motherEmail}
+      </li>`;
     })
     .join("");
   container.innerHTML = `
@@ -214,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         if (res.ok) {
           if (data.token) setToken(data.token);
-            setAuthCache();
+          setAuthCache();
           if (authContainer) authContainer.style.display = "none";
           if (mainContainer) mainContainer.style.display = "";
         } else {
@@ -304,24 +311,30 @@ document.addEventListener("DOMContentLoaded", () => {
       // Construct payload including parent contact details
       const payload = lastResultsPeople.map((p) => ({
         name: p.name || "",
-        email: p.email || "",
-        phone: p.phone || "",
+        recipient: p.email || "",
+        recipient_phone: p.phone || "",
         father_email: p.father_email || "",
         father_phone: p.father_phone || "",
         mother_email: p.mother_email || "",
         mother_phone: p.mother_phone || "",
       }));
-      const preview = payload
-        .map(
-          (p) =>
-            `${p.name} | E:${p.email} P:${p.phone} | Father(${p.father_email}, ${p.father_phone}) | Mother(${p.mother_email}, ${p.mother_phone})`,
-        )
-        .join("\n");
 
-      alert(
-        "Payload ready.\n\n" +
-          preview,
-      );
+      // Send Card
+      fetch("http://localhost:8000/send_card", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + getToken(),
+        },
+        body: JSON.stringify(payload[0]),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          alert(JSON.stringify(data))
+        })
+        .catch(() => {
+          alert("Network error while sending message.");
+        });
     });
   }
 

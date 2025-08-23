@@ -199,6 +199,22 @@ def send_email():
     subject = data.get("subject", f"Happy Birthday, {name} 🎂")
     recipient_phone = data.get("recipient_phone", "919486870915")
 
+    father_email = data.get("father_email")
+    father_phone = data.get("father_phone")
+    mother_email = data.get("mother_email")
+    mother_phone = data.get("mother_phone")
+
+    extra_recipients = []
+    if father_email:
+        extra_recipients.append(father_email)
+    if mother_email:
+        extra_recipients.append(mother_email)
+    extra_phones = []
+    if father_phone:
+        extra_phones.append(str(father_phone))
+    if mother_phone:
+        extra_phones.append(str(mother_phone))
+
     # Generate AI message
     try:
         message = asyncio.run(text_gen(name))
