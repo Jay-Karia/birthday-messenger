@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("darkMode", {
   toggle: () => ipcRenderer.invoke("dark-mode:toggle"),
   system: () => ipcRenderer.invoke("dark-mode:system"),
+  set: (mode) => ipcRenderer.invoke("dark-mode:set", mode), // NEW
 });
 
 contextBridge.exposeInMainWorld("electron", {

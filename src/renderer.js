@@ -8,64 +8,81 @@ const TOKEN_KEY = "auth_token";
 let lastResultsPeople = [];
 
 // ---------- Token Helpers ----------
-function setToken(t) {
-  localStorage.setItem(TOKEN_KEY, t);
-}
-function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
-function clearToken() {
-  localStorage.removeItem(TOKEN_KEY);
-}
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
 
 // ---------- Auth Cache Helpers ----------
 function setAuthCache() {
   const expires = Date.now() + AUTH_CACHE_MINUTES * 60 * 1000;
   localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ expires }));
 }
-function clearAuthCache() {
-  localStorage.removeItem(AUTH_CACHE_KEY);
-}
+function clearAuthCache() { localStorage.removeItem(AUTH_CACHE_KEY); }
 function isAuthCached() {
   const cache = localStorage.getItem(AUTH_CACHE_KEY);
   if (!cache) return false;
   try {
     const { expires } = JSON.parse(cache);
     return Date.now() < expires;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
-// ---------- Theme Helpers ----------
+// ---------- Theme Helpers (Persistent) ----------
 function applyThemeClass(mode) {
-  if (mode === "dark") {
-    document.body.classList.add("dark");
-  } else {
-    document.body.classList.remove("dark");
-  }
-}
-function getThemeCache() {
-  return localStorage.getItem(THEME_CACHE_KEY);
-}
-function setThemeCache(mode) {
-  localStorage.setItem(THEME_CACHE_KEY, mode);
+  if (mode === "dark") document.body.classList.add("dark");
+  else document.body.classList.remove("dark");
 }
 
-async function toggleThemeElectronBridge() {
-  if (!window.darkMode || !window.darkMode.toggle) {
-    const isDark = !document.body.classList.contains("dark");
-    applyThemeClass(isDark ? "dark" : "light");
-    setThemeCache(isDark ? "dark" : "light");
-    return;
-  }
-  const isDarkMode = await window.darkMode.toggle();
-  const mode = isDarkMode ? "dark" : "light";
+function getThemeCache() { return localStorage.getItem(THEME_CACHE_KEY); }
+function setThemeCache(mode) { localStorage.setItem(THEME_CACHE_KEY, mode); }
+
+async function setTheme(mode) {
   setThemeCache(mode);
   applyThemeClass(mode);
+  if (window.darkMode && window.darkMode.set) {
+    try { await window.darkMode.set(mode); } catch {}
+  }
+}
+
+async function initializeTheme() {
+  const stored = getThemeCache();
+  if (stored === "dark" || stored === "light") {
+    applyThemeClass(stored); // apply immediately (class)
+    if (window.darkMode && window.darkMode.set) {
+      window.darkMode.set(stored); // sync nativeTheme
+    }
+  } else {
+    // No stored theme: determine system (if available) and store it
+    let systemIsDark = false;
+    try {
+      if (window.darkMode && window.darkMode.system) {
+        systemIsDark = await window.darkMode.system();
+      } else {
+        // Fallback: match prefers-color-scheme
+        systemIsDark = window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches;
+      }
+    } catch {}
+    const inferred = systemIsDark ? "dark" : "light";
+    setThemeCache(inferred);
+    applyThemeClass(inferred);
+  }
+}
+
+async function toggleTheme() {
+  // Instead of relying on native toggle (which can desync with cache),
+  // we flip our stored preference explicitly.
+  const current = getThemeCache() || (document.body.classList.contains("dark") ? "dark" : "light");
+  const next = current === "dark" ? "light" : "dark";
+  await setTheme(next);
+}
+
+// Backwards-compatible bridge function (used by existing code)
+async function toggleThemeElectronBridge() {
+  await toggleTheme();
   const themeIndicator = document.getElementById("theme-source");
   if (themeIndicator) {
-    themeIndicator.textContent = isDarkMode ? "Dark" : "Light";
+    themeIndicator.textContent = document.body.classList.contains("dark") ? "Dark" : "Light";
   }
 }
 
@@ -77,27 +94,21 @@ function renderResults(container, html, cls) {
 
 function renderResultsList(container, title, people) {
   if (!container) return;
-  const listItems = people
-    .map((p) => {
-      const name = p.name || "(No name)";
-      const email = p.email ? ` - ${p.email}` : "";
-      const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
-      const fatherEmail = p.father_email
-        ? `<br><small>Father Email: ${p.father_email}${
-            p.father_phone ? " (" + p.father_phone + ")" : ""
-          }</small>`
-        : "";
-      const motherEmail = p.mother_email
-        ? `<br><small>Mother Email: ${p.mother_email}${
-            p.mother_phone ? " (" + p.mother_phone + ")" : ""
-          }</small>`
-        : "";
-      return `<li>
+  const listItems = people.map((p) => {
+    const name = p.name || "(No name)";
+    const email = p.email ? ` - ${p.email}` : "";
+    const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
+    const fatherEmail = p.father_email
+      ? `<br><small>Father Email: ${p.father_email}${p.father_phone ? " (" + p.father_phone + ")" : ""}</small>`
+      : "";
+    const motherEmail = p.mother_email
+      ? `<br><small>Mother Email: ${p.mother_email}${p.mother_phone ? " (" + p.mother_phone + ")" : ""}</small>`
+      : "";
+    return `<li>
         <strong>${name}</strong>${email}${phone}
         ${fatherEmail}${motherEmail}
       </li>`;
-    })
-    .join("");
+  }).join("");
   container.innerHTML = `
     <h3>${title}</h3>
     <ul>${listItems}</ul>
@@ -107,16 +118,9 @@ function renderResultsList(container, title, people) {
 // ---------- Birthday Fetch ----------
 async function fetchBirthdays(dateValue, container) {
   lastResultsPeople = [];
-  if (!dateValue) {
-    renderResults(container, "Please select a date.", "error");
-    return;
-  }
+  if (!dateValue) { renderResults(container, "Please select a date.", "error"); return; }
   if (!isAuthCached() || !getToken()) {
-    renderResults(
-      container,
-      "You are not authenticated. Please login again.",
-      "error"
-    );
+    renderResults(container, "You are not authenticated. Please login again.", "error");
     return;
   }
 
@@ -169,9 +173,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-results-btn");
   const sendBtn = document.getElementById("send-btn");
 
+  // Initialize theme persistence
+  initializeTheme();
+
   function updateActionButtonsVisibility() {
-    const hasResultItem =
-      resultsContainer && !!resultsContainer.querySelector("li");
+    const hasResultItem = resultsContainer && !!resultsContainer.querySelector("li");
     const displayValue = hasResultItem ? "" : "none";
     if (sendBtn) sendBtn.style.display = displayValue;
     if (clearBtn) clearBtn.style.display = displayValue;
@@ -184,9 +190,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const observer = new MutationObserver(updateActionButtonsVisibility);
     observer.observe(resultsContainer, { childList: true, subtree: true });
   }
-
-  const cachedTheme = getThemeCache();
-  if (cachedTheme) applyThemeClass(cachedTheme);
 
   if (isAuthCached() && getToken() && authContainer && mainContainer) {
     authContainer.style.display = "none";
@@ -215,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (mainContainer) mainContainer.style.display = "";
         } else {
           loginError.textContent = data.error || "Login failed";
-          loginError.style.display = "block";
+            loginError.style.display = "block";
         }
       } catch {
         loginError.textContent = "Could not connect to server";
@@ -233,9 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: token ? { Authorization: "Bearer " + token } : {},
         });
-      } catch {
-        // ignore
-      }
+      } catch {}
       clearToken();
       clearAuthCache();
       lastResultsPeople = [];
@@ -257,9 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (findBtn && birthdayInput) {
     function runFind() {
       if (!birthdayInput) return;
-      fetchBirthdays(birthdayInput.value, resultsContainer).then(() => {
-        updateActionButtonsVisibility();
-      });
+      fetchBirthdays(birthdayInput.value, resultsContainer)
+        .then(updateActionButtonsVisibility);
     }
     findBtn.addEventListener("click", runFind);
     birthdayInput.addEventListener("keydown", (e) => {
@@ -276,14 +276,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (window.electron && window.electron.openExternal) {
         const result = await window.electron.openExternal(url);
         if (!result || result.ok !== true) {
-          try {
-            window.open(url, "_blank", "noopener");
-          } catch {}
+          try { window.open(url, "_blank", "noopener"); } catch {}
         }
       } else {
-        try {
-          window.open(url, "_blank", "noopener");
-        } catch {}
+        try { window.open(url, "_blank", "noopener"); } catch {}
       }
     });
   });
@@ -332,11 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(payload),
         });
         let data;
-        try {
-          data = await res.json();
-        } catch {
-          data = { error: "Invalid JSON response" };
-        }
+        try { data = await res.json(); } catch { data = { error: "Invalid JSON response" }; }
         if (!res.ok) {
           alert("Send failed");
           console.error("Send error detail:", data);

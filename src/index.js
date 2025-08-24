@@ -1,12 +1,10 @@
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const path = require("node:path");
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-// Open external links securely
 ipcMain.handle("open-external", async (_event, url) => {
   try {
     if (typeof url !== "string" || !/^https?:\/\//i.test(url)) {
@@ -20,12 +18,30 @@ ipcMain.handle("open-external", async (_event, url) => {
   }
 });
 
+ipcMain.handle("dark-mode:toggle", () => {
+  nativeTheme.themeSource = nativeTheme.shouldUseDarkColors ? "light" : "dark";
+  return nativeTheme.shouldUseDarkColors;
+});
+
+ipcMain.handle("dark-mode:system", () => {
+  nativeTheme.themeSource = "system";
+  return nativeTheme.shouldUseDarkColors;
+});
+
+// NEW: explicit setter for persistence
+ipcMain.handle("dark-mode:set", (_evt, mode) => {
+  if (!["light", "dark", "system"].includes(mode)) {
+    mode = "system";
+  }
+  nativeTheme.themeSource = mode;
+  return nativeTheme.shouldUseDarkColors;
+});
+
 const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // Keep nodeIntegration true only if you trust all loaded content.
       nodeIntegration: true,
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
@@ -36,15 +52,6 @@ const createWindow = () => {
 
   mainWindow.loadFile(path.join(__dirname, "index.html"));
 };
-
-ipcMain.handle("dark-mode:toggle", () => {
-  nativeTheme.themeSource = nativeTheme.shouldUseDarkColors ? "light" : "dark";
-  return nativeTheme.shouldUseDarkColors;
-});
-
-ipcMain.handle("dark-mode:system", () => {
-  nativeTheme.themeSource = "system";
-});
 
 app.whenReady().then(() => {
   createWindow();
