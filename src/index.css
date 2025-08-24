@@ -60,3 +60,47 @@ body {
 .results li { margin-bottom: 4px; }
 .results .error { color: #c0392b; }
 .results .empty { opacity: 0.7; }
+
+
+/* Sticky footer layout */
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+}
+
+#content-wrapper {
+  flex: 1;
+  /* optional: add padding-bottom if results might collide with footer visually */
+  padding-bottom: 32px;
+}
+
+footer {
+  margin-top: auto; /* pushes footer to bottom when space remains */
+  align-self: flex-end;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  /* replicate previous positioning offsets */
+  margin-right: 24px;
+  margin-bottom: 16px;
+  /* remove any absolute/fixed layout */
+  position: static;
+  background: transparent;
+}
+
+footer a {
+  text-decoration: none;
+  color: inherit;
+  opacity: 0.85;
+}
+
+footer a:hover {
+  opacity: 1;
+  text-decoration: underline;
+}

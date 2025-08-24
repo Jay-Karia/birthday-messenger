@@ -10,150 +10,143 @@
     <link rel="stylesheet" type="text/css" href="./index.css" />
   </head>
   <body>
-    <!-- Toggle Theme mode -->
-    <button id="toggle-dark-mode" title="Toggle Theme">
-      <span style="vertical-align: middle">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          style="vertical-align: middle"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle
-            cx="10"
-            cy="10"
-            r="7"
-            stroke="currentColor"
-            stroke-width="2"
-            fill="none"
-          />
-          <path
-            d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
-            stroke="currentColor"
-            stroke-width="2"
-          />
-        </svg>
-      </span>
-    </button>
+    <div id="content-wrapper"><!-- ADDED WRAPPER -->
 
-    <!-- Logout Button -->
-    <button id="logout-btn" title="Logout">
-      <span style="vertical-align: middle">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 20 20"
-          fill="none"
-          style="vertical-align: middle"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <rect
-            x="3.5"
-            y="5.5"
-            width="7"
-            height="9"
-            rx="1.5"
-            stroke="currentColor"
-            stroke-width="1.6"
+      <!-- Toggle Theme mode -->
+      <button id="toggle-dark-mode" title="Toggle Theme">
+        <span style="vertical-align: middle">
+          <!-- svg unchanged -->
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
             fill="none"
-          />
-          <path
-            d="M10 10h6"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-          />
+            style="vertical-align: middle"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="10"
+              cy="10"
+              r="7"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            />
             <path
-            d="M14 8l2 2-2 2"
-            stroke="currentColor"
-            stroke-width="1.6"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          />
-        </svg>
-      </span>
-    </button>
+              d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+          </svg>
+        </span>
+      </button>
 
-    <!-- Auth/Login Page -->
-    <div id="auth-container">
-      <div class="auth-box">
-        <img src="../public/srm-logo.png" alt="SRM Logo" style="height: 104px" />
+      <!-- Logout Button -->
+      <button id="logout-btn" title="Logout">
+        <span style="vertical-align: middle">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            style="vertical-align: middle"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="3.5"
+              y="5.5"
+              width="7"
+              height="9"
+              rx="1.5"
+              stroke="currentColor"
+              stroke-width="1.6"
+              fill="none"
+            />
+            <path
+              d="M10 10h6"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <path
+              d="M14 8l2 2-2 2"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+
+      <!-- Auth/Login Page -->
+      <div id="auth-container">
+        <div class="auth-box">
+          <img src="../public/srm-logo.png" alt="SRM Logo" style="height: 104px" />
+        </div>
+        <h2>Login</h2>
+        <input
+          id="user-input"
+          type="text"
+          placeholder="User ID"
+          class="auth-input"
+        />
+        <input
+          id="pass-input"
+          type="password"
+          placeholder="Password"
+          class="auth-input"
+        />
+        <button id="login-btn">Login</button>
+        <div id="login-error"></div>
       </div>
-      <h2>Login</h2>
-      <input
-        id="user-input"
-        type="text"
-        placeholder="User ID"
-        class="auth-input"
-      />
-      <input
-        id="pass-input"
-        type="password"
-        placeholder="Password"
-        class="auth-input"
-      />
-      <button id="login-btn">Login</button>
-      <div id="login-error"></div>
-    </div>
 
-    <!-- Main App Content -->
-    <div id="main-container" style="display: none">
-      <img
-        src="../public/srm-logo.png"
-        alt="SRM Logo"
-        style="height: 34px; margin-left: 5px"
-      />
+      <!-- Main App Content -->
+      <div id="main-container" style="display: none">
+        <img
+          src="../public/srm-logo.png"
+          alt="SRM Logo"
+          style="height: 34px; margin-left: 5px"
+        />
 
-      <div class="birthday-container">
-        <label for="birthday" id="birthday-label">Select a birthday:</label>
-        <div class="birthday-box">
-          <input type="date" id="birthday" name="birthday" />
-          <button id="find-btn" type="button">
-            <span class="label">Find</span>
+        <div class="birthday-container">
+          <label for="birthday" id="birthday-label">Select a birthday:</label>
+            <div class="birthday-box">
+              <input type="date" id="birthday" name="birthday" />
+              <button id="find-btn" type="button">
+                <span class="label">Find</span>
+              </button>
+            </div>
+        </div>
+
+        <div id="results-container" class="results"></div>
+
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+          "
+        >
+          <button id="clear-results-btn" type="button">
+            <span class="icon" aria-hidden="true">✕</span>
+            Clear
+          </button>
+
+          <button id="send-btn" type="button">
+            <span class="label">Send</span>
           </button>
         </div>
       </div>
+    </div><!-- END content-wrapper -->
 
-      <div id="results-container" class="results"></div>
-
-      <div
-        style="
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-          margin-top: 20px;
-        "
-      >
-        <button id="clear-results-btn" type="button">
-          <span class="icon" aria-hidden="true">✕</span>
-          Clear
-        </button>
-
-        <button id="send-btn" type="button">
-          <span class="label">Send</span>
-        </button>
-      </div>
-    </div>
-
-    <footer
-      style="
-        position: fixed;
-        bottom: 16px;
-        right: 24px;
-        z-index: 100;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 14px;
-      "
-    >
+    <footer>
       <a
         href="https://github.com/Jay-Karia/birthday-messenger"
         target="_blank"
-        >View on GitHub</a
-      >
+      >View on GitHub</a>
     </footer>
 
     <script src="renderer.js"></script>
