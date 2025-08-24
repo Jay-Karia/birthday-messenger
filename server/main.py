@@ -4,7 +4,6 @@ import secrets
 import asyncio
 from datetime import datetime, date
 from typing import Optional
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from sendgrid import SendGridAPIClient
@@ -19,7 +18,6 @@ from sendgrid.helpers.mail import (
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from openpyxl import load_workbook  # NEW
-
 from components.whatsapp_msg import send_whatsapp
 from components.text_ai import text_gen
 
@@ -220,84 +218,103 @@ def send_email():
     if auth_error:
         return auth_error
 
-    data = request.json or {}
-    recipient = data.get("recipient")
-    if not recipient:
-        return jsonify({"error": "Recipient email required"}), 400
+    datas = request.json
+    if not datas:
+        return jsonify({"error": "No input data provided"}), 400
+    # Normalize input: always work with a list of dicts
+    if isinstance(datas, dict):
+        data_list = [datas]
+    elif isinstance(datas, list):
+        data_list = datas
+    else:
+        return jsonify({"error": "Invalid input format. Must be dict or list"}), 400
 
-    name = data.get("name", "Friend")
-    subject = data.get("subject", f"Happy Birthday, {name} 🎂")
-    recipient_phone = data.get("recipient_phone", "919486870915")
+    results = []
+    for entry in data_list:
+        print(entry)
+        recipient = entry.get("recipient")
+        if not recipient:
+            results.append({"status": 400, "error": "Recipient email required"})
+            continue
 
-    father_email = data.get("father_email")
-    father_phone = data.get("father_phone")
-    mother_email = data.get("mother_email")
-    mother_phone = data.get("mother_phone")
+        name = entry.get("name", "Friend")
+        subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
+        recipient_phone = entry.get("recipient_phone", "919486870915")
 
-    extra_recipients = []
-    if father_email:
-        extra_recipients.append(father_email)
-    if mother_email:
-        extra_recipients.append(mother_email)
-    extra_phones = []
-    if father_phone:
-        extra_phones.append(str(father_phone))
-    if mother_phone:
-        extra_phones.append(str(mother_phone))
+        father_email = entry.get("father_email")
+        father_phone = entry.get("father_phone")
+        mother_email = entry.get("mother_email")
+        mother_phone = entry.get("mother_phone")
 
-    # Generate AI message
-    try:
-        message = asyncio.run(text_gen(name))
-    except Exception as e:
-        return jsonify({"error": f"AI text generation failed: {e}"}), 500
+        extra_recipients = []
+        if father_email:
+            extra_recipients.append(father_email)
+        if mother_email:
+            extra_recipients.append(mother_email)
+        extra_phones = []
+        if father_phone:
+            extra_phones.append(str(father_phone))
+        if mother_phone:
+            extra_phones.append(str(mother_phone))
 
-    # Build card
-    try:
-        card_path = create_birthday_card(name, message)
-    except Exception as e:
-        return jsonify({"error": f"Card generation failed: {e}"}), 500
+            # Generate AI message
+            try:
+                message = asyncio.run(text_gen(name))
+            except Exception as e:
+                results.append({"status": 500, "error": f"AI text generation failed: {e}"})
+                continue
 
-    # Encode image
-    try:
-        with open(card_path, "rb") as f:
-            encoded_file = base64.b64encode(f.read()).decode()
-    except Exception as e:
-        return jsonify({"error": f"Attachment encoding failed: {e}"}), 500
+            # Build card
+            try:
+                card_path = create_birthday_card(name, message)
+            except Exception as e:
+                results.append({"status": 500, "error": f"Card generation failed: {e}"})
+                continue
 
-    attachment = Attachment(
-        FileContent(encoded_file),
-        FileName(os.path.basename(card_path)),
-        FileType("image/png"),
-        Disposition("attachment"),
-    )
+            # Encode image
+            try:
+                with open(card_path, "rb") as f:
+                    encoded_file = base64.b64encode(f.read()).decode()
+            except Exception as e:
+                results.append({"status": 500, "error": f"Attachment encoding failed: {e}"})
+                continue
 
-    all_recipients = [recipient] + extra_recipients
-
-    # Send WhatsApp (best-effort)
-    all_phones = [str(recipient_phone)] + extra_phones
-    for phone in all_phones:
-        try:
-            send_whatsapp(message, phone, card_path)
-        except Exception:
-            pass
-
-    try:
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        for email_addr in all_recipients:
-            email = Mail(
-                from_email=FROM_EMAIL,
-                to_emails=email_addr,
-                subject=subject,
-                html_content=f"<p>{message}</p>",
+            attachment = Attachment(
+                FileContent(encoded_file),
+                FileName(os.path.basename(card_path)),
+                FileType("image/png"),
+                Disposition("attachment"),
             )
-            email.attachment = attachment
-            sg.send(email)
-        return jsonify({
-            "status": 200,
-            "message": "Email sent successfully to all recipients!",
-        }), 200
-    except Exception as e:
-        return jsonify({"error": f"Email send failed: {e}"}), 500
+
+            all_recipients = [recipient] + extra_recipients
+
+            # Send WhatsApp (best-effort)
+            all_phones = [str(recipient_phone)] + extra_phones
+            for phone in all_phones:
+                try:
+                    send_whatsapp(message, phone, card_path)
+                except Exception:
+                    pass
+
+            try:
+                sg = SendGridAPIClient(SENDGRID_API_KEY)
+                for email_addr in all_recipients:
+                    email = Mail(
+                        from_email=FROM_EMAIL,
+                        to_emails=email_addr,
+                        subject=subject,
+                        html_content=f"<p>{message}</p>",
+                    )
+                    email.attachment = attachment
+                    sg.send(email)
+
+                results.append({
+                    "status": 200,
+                    "message": f"Email sent successfully to {all_recipients}"
+                })
+            except Exception as e:
+                results.append({"status": 500, "error": f"Email send failed: {e}"})
+    return jsonify(results), 200
 
 
 # --- Error Handlers ---
