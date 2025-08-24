@@ -4,3 +4,4 @@ pillow
 dotenv
 requests
 groq
+openpyxl

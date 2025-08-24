@@ -1,9 +1,8 @@
 import os
-import csv
 import base64
 import secrets
 import asyncio
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
 from flask import Flask, request, jsonify
@@ -15,10 +14,11 @@ from sendgrid.helpers.mail import (
     FileContent,
     FileName,
     FileType,
-    Disposition
+    Disposition,
 )
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
+from openpyxl import load_workbook  # NEW
 
 from components.whatsapp_msg import send_whatsapp
 from components.text_ai import text_gen
@@ -45,7 +45,7 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CARD_TEMPLATE = os.path.join(BASE_DIR, "components", "card.png")
 FONT_PATH = os.path.join(BASE_DIR, "components", "font-title.ttf")
-CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "dummy.csv"))
+EXCEL_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "dummy.xlsx"))
 
 # --- Utilities ---
 
@@ -84,7 +84,6 @@ def parse_month_day(date_str: str) -> Optional[str]:
         return None
     try:
         if len(date_str) == 5 and date_str[2] == "-":
-            # Validate by constructing a dummy year date
             datetime.strptime(f"2000-{date_str}", "%Y-%m-%d")
             return date_str
         if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
@@ -95,40 +94,71 @@ def parse_month_day(date_str: str) -> Optional[str]:
     return None
 
 
-def read_csv_matches(month_day: str) -> list[dict]:
-    """
-    Read the CSV (no headers) and build rows that match month-day of birthday
-    Expected columns:
-      0:id 1:name 2:app_id 3:birthday 4:email 5:phone 6:father_email
-      7:father_phone 8:mother_email 9:mother_phone
-    """
-    matches: list[dict] = []
-    if not os.path.exists(CSV_PATH):
-        return matches
-
-    with open(CSV_PATH, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if len(row) < 4:
-                continue
-            birthday_raw = row[3].strip()
+def _coerce_birthday(cell_val) -> Optional[datetime]:
+    if isinstance(cell_val, datetime):
+        return cell_val
+    if isinstance(cell_val, date):
+        return datetime.combine(cell_val, datetime.min.time())
+    if isinstance(cell_val, str):
+        s = cell_val.strip()
+        # Try supported formats
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
             try:
-                bday = datetime.strptime(birthday_raw, "%Y-%m-%d")
+                return datetime.strptime(s, fmt)
             except ValueError:
                 continue
-            if bday.strftime("%m-%d") == month_day:
-                matches.append({
-                    "id": row[0] if len(row) > 0 else "",
-                    "name": row[1] if len(row) > 1 else "",
-                    "app_id": row[2] if len(row) > 2 else "",
-                    "birthday": birthday_raw,
-                    "email": row[4] if len(row) > 4 else "",
-                    "phone": row[5] if len(row) > 5 else "",
-                    "father_email": row[6] if len(row) > 6 else "",
-                    "father_phone": row[7] if len(row) > 7 else "",
-                    "mother_email": row[8] if len(row) > 8 else "",
-                    "mother_phone": row[9] if len(row) > 9 else ""
-                })
+    return None
+
+
+def read_excel_matches(month_day: str) -> list[dict]:
+    """
+    Read the Excel workbook (headerless or with a header row) and build rows
+    that match month-day of birthday.
+    """
+    matches: list[dict] = []
+    if not os.path.exists(EXCEL_PATH):
+        return matches
+
+    try:
+        wb = load_workbook(EXCEL_PATH, data_only=True, read_only=True)
+    except Exception as e:
+        print(f"[read_excel_matches] Failed to open workbook: {e}")
+        return matches
+
+    # Use first sheet
+    try:
+        sheet = wb[wb.sheetnames[0]]
+    except Exception:
+        return matches
+
+    for row in sheet.iter_rows(values_only=True):
+        # Expect at least 4 columns to attempt parse
+        if not row or len(row) < 4:
+            continue
+
+        birthday_raw = row[3]
+        bday = _coerce_birthday(birthday_raw)
+        if not bday:
+            # Likely a header row or invalid entry
+            continue
+
+        if bday.strftime("%m-%d") == month_day:
+            def _safe(idx):
+                return row[idx] if len(row) > idx and row[idx] is not None else ""
+
+            matches.append({
+                "id": _safe(0),
+                "name": _safe(1),
+                "app_id": _safe(2),
+                "birthday": bday.strftime("%Y-%m-%d"),
+                "email": _safe(4),
+                "phone": _safe(5),
+                "father_email": _safe(6),
+                "father_phone": _safe(7),
+                "mother_email": _safe(8),
+                "mother_phone": _safe(9),
+            })
+
     return matches
 
 
@@ -173,7 +203,7 @@ def filter_birthdays():
     if not month_day:
         return jsonify({"error": "Invalid date format. Use MM-DD or YYYY-MM-DD"}), 400
 
-    matches = read_csv_matches(month_day)
+    matches = read_excel_matches(month_day)
     formatted_date = datetime.strptime(f"2000-{month_day}", "%Y-%m-%d").strftime("%B %d")
 
     return jsonify({
@@ -238,21 +268,19 @@ def send_email():
         FileContent(encoded_file),
         FileName(os.path.basename(card_path)),
         FileType("image/png"),
-        Disposition("attachment")
+        Disposition("attachment"),
     )
 
-    # Prepare all email recipients (main + extra)
     all_recipients = [recipient] + extra_recipients
 
-    # Send WhatsApp (best-effort) to all phones
+    # Send WhatsApp (best-effort)
     all_phones = [str(recipient_phone)] + extra_phones
     for phone in all_phones:
         try:
             send_whatsapp(message, phone, card_path)
         except Exception:
-            pass  # Ignore WhatsApp errors
+            pass
 
-    # Send email to all recipients
     try:
         sg = SendGridAPIClient(SENDGRID_API_KEY)
         for email_addr in all_recipients:
@@ -260,13 +288,13 @@ def send_email():
                 from_email=FROM_EMAIL,
                 to_emails=email_addr,
                 subject=subject,
-                html_content=f"<p>{message}</p>"
+                html_content=f"<p>{message}</p>",
             )
             email.attachment = attachment
             sg.send(email)
         return jsonify({
             "status": 200,
-            "message": "Email sent successfully to all recipients!"
+            "message": "Email sent successfully to all recipients!",
         }), 200
     except Exception as e:
         return jsonify({"error": f"Email send failed: {e}"}), 500
@@ -286,5 +314,4 @@ def server_error(e):
 
 
 if __name__ == "__main__":
-    # Bind host for broader accessibility; remove if not needed
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
