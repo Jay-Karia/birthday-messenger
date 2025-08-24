@@ -15,14 +15,12 @@ Cross‑platform desktop app to:
 
 - Date picker (filters by MM-DD; year ignored)
 - Token authentication (login once; cached client side for 1 hour)
-- Dark / Light theme toggle (persisted)
-- Excel-based data source (`dummy.xlsx`) with parent contact info
+- Dark / Light theme toggle
+- Excel-based data source with parent contact info
 - SendGrid email sending with card PNG attachment
 - WhatsApp media message sending (optional; needs Graph credentials)
 - AI-generated birthday text (Groq API)
 - Parent (father/mother) emails + phones auto-included in sends
-- Monochrome button theme and loading states for sending
-- Secure external link opening via IPC
 
 ---
 
