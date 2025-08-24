@@ -3,28 +3,39 @@ const AUTH_CACHE_KEY = "auth_cache";
 const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
+const API_URL = "http://localhost:8000";
 
 // ---------- State (Results Cache) ----------
 let lastResultsPeople = [];
 
 // ---------- Token Helpers ----------
-function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
-function getToken() { return localStorage.getItem(TOKEN_KEY); }
-function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function setToken(t) {
+  localStorage.setItem(TOKEN_KEY, t);
+}
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 // ---------- Auth Cache Helpers ----------
 function setAuthCache() {
   const expires = Date.now() + AUTH_CACHE_MINUTES * 60 * 1000;
   localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify({ expires }));
 }
-function clearAuthCache() { localStorage.removeItem(AUTH_CACHE_KEY); }
+function clearAuthCache() {
+  localStorage.removeItem(AUTH_CACHE_KEY);
+}
 function isAuthCached() {
   const cache = localStorage.getItem(AUTH_CACHE_KEY);
   if (!cache) return false;
   try {
     const { expires } = JSON.parse(cache);
     return Date.now() < expires;
-  } catch { return false; }
+  } catch {
+    return false;
+  }
 }
 
 // ---------- Theme Helpers (Persistent) ----------
@@ -33,14 +44,20 @@ function applyThemeClass(mode) {
   else document.body.classList.remove("dark");
 }
 
-function getThemeCache() { return localStorage.getItem(THEME_CACHE_KEY); }
-function setThemeCache(mode) { localStorage.setItem(THEME_CACHE_KEY, mode); }
+function getThemeCache() {
+  return localStorage.getItem(THEME_CACHE_KEY);
+}
+function setThemeCache(mode) {
+  localStorage.setItem(THEME_CACHE_KEY, mode);
+}
 
 async function setTheme(mode) {
   setThemeCache(mode);
   applyThemeClass(mode);
   if (window.darkMode && window.darkMode.set) {
-    try { await window.darkMode.set(mode); } catch {}
+    try {
+      await window.darkMode.set(mode);
+    } catch {}
   }
 }
 
@@ -59,7 +76,8 @@ async function initializeTheme() {
         systemIsDark = await window.darkMode.system();
       } else {
         // Fallback: match prefers-color-scheme
-        systemIsDark = window.matchMedia &&
+        systemIsDark =
+          window.matchMedia &&
           window.matchMedia("(prefers-color-scheme: dark)").matches;
       }
     } catch {}
@@ -70,9 +88,10 @@ async function initializeTheme() {
 }
 
 async function toggleTheme() {
-  // Instead of relying on native toggle (which can desync with cache),
-  // we flip our stored preference explicitly.
-  const current = getThemeCache() || (document.body.classList.contains("dark") ? "dark" : "light");
+  // Flip stored preference explicitly.
+  const current =
+    getThemeCache() ||
+    (document.body.classList.contains("dark") ? "dark" : "light");
   const next = current === "dark" ? "light" : "dark";
   await setTheme(next);
 }
@@ -82,7 +101,9 @@ async function toggleThemeElectronBridge() {
   await toggleTheme();
   const themeIndicator = document.getElementById("theme-source");
   if (themeIndicator) {
-    themeIndicator.textContent = document.body.classList.contains("dark") ? "Dark" : "Light";
+    themeIndicator.textContent = document.body.classList.contains("dark")
+      ? "Dark"
+      : "Light";
   }
 }
 
@@ -94,33 +115,70 @@ function renderResults(container, html, cls) {
 
 function renderResultsList(container, title, people) {
   if (!container) return;
-  const listItems = people.map((p) => {
-    const name = p.name || "(No name)";
-    const email = p.email ? ` - ${p.email}` : "";
-    const phone = p.phone ? ` <span>(${p.phone})</span>` : "";
-    const fatherEmail = p.father_email
-      ? `<br><small>Father Email: ${p.father_email}${p.father_phone ? " (" + p.father_phone + ")" : ""}</small>`
-      : "";
-    const motherEmail = p.mother_email
-      ? `<br><small>Mother Email: ${p.mother_email}${p.mother_phone ? " (" + p.mother_phone + ")" : ""}</small>`
-      : "";
-    return `<li>
-        <strong>${name}</strong>${email}${phone}
-        ${fatherEmail}${motherEmail}
-      </li>`;
-  }).join("");
+  const rows = people
+    .map((p) => {
+      const safe = (v) => (v ? escapeHtml(String(v)) : "–");
+      const joinPair = (email, phone) => {
+        if (email && phone)
+          return `${escapeHtml(email)}<br><small>${escapeHtml(phone)}</small>`;
+        if (email) return escapeHtml(email);
+        if (phone) return `<small>${escapeHtml(phone)}</small>`;
+        return "–";
+      };
+      return `<tr>
+        <td>${safe(p.name)}</td>
+        <td>${safe(p.email)}</td>
+        <td>${safe(p.phone)}</td>
+        <td>${joinPair(p.father_email, p.father_phone)}</td>
+        <td>${joinPair(p.mother_email, p.mother_phone)}</td>
+      </tr>`;
+    })
+    .join("");
+
   container.innerHTML = `
     <h3>${title}</h3>
-    <ul>${listItems}</ul>
+    <div class="results-table-wrapper">
+      <table class="results-table" role="table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Phone</th>
+            <th scope="col">Father</th>
+            <th scope="col">Mother</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
   `;
+}
+
+// Utility to escape HTML
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 // ---------- Birthday Fetch ----------
 async function fetchBirthdays(dateValue, container) {
   lastResultsPeople = [];
-  if (!dateValue) { renderResults(container, "Please select a date.", "error"); return; }
+  if (!dateValue) {
+    renderResults(container, "Please select a date.", "error");
+    return;
+  }
   if (!isAuthCached() || !getToken()) {
-    renderResults(container, "You are not authenticated. Please login again.", "error");
+    renderResults(
+      container,
+      "You are not authenticated. Please login again.",
+      "error",
+    );
     return;
   }
 
@@ -131,7 +189,7 @@ async function fetchBirthdays(dateValue, container) {
 
   renderResults(container, "Loading...", "loading");
   try {
-    const res = await fetch(`http://localhost:8000/filter?date=${param}`, {
+    const res = await fetch(`${API_URL}/filter?date=${param}`, {
       method: "GET",
       headers: { Authorization: "Bearer " + getToken() },
     });
@@ -148,7 +206,7 @@ async function fetchBirthdays(dateValue, container) {
     renderResultsList(
       container,
       `${data.count} birthday(s) on ${data.date || data.month_day}`,
-      data.people
+      data.people,
     );
   } catch (e) {
     console.error("Fetch error:", e);
@@ -177,8 +235,9 @@ document.addEventListener("DOMContentLoaded", () => {
   initializeTheme();
 
   function updateActionButtonsVisibility() {
-    const hasResultItem = resultsContainer && !!resultsContainer.querySelector("li");
-    const displayValue = hasResultItem ? "" : "none";
+    const hasRow =
+      resultsContainer && !!resultsContainer.querySelector("tbody tr");
+    const displayValue = hasRow ? "" : "none";
     if (sendBtn) sendBtn.style.display = displayValue;
     if (clearBtn) clearBtn.style.display = displayValue;
   }
@@ -205,9 +264,9 @@ document.addEventListener("DOMContentLoaded", () => {
       loginError.style.display = "none";
       loginError.textContent = "";
       try {
-        const res = await fetch("http://localhost:8000/login", {
+        const res = await fetch(`${API_URL}/login`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ user, password }),
         });
         const data = await res.json();
@@ -218,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (mainContainer) mainContainer.style.display = "";
         } else {
           loginError.textContent = data.error || "Login failed";
-            loginError.style.display = "block";
+          loginError.style.display = "block";
         }
       } catch {
         loginError.textContent = "Could not connect to server";
@@ -232,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.addEventListener("click", async () => {
       const token = getToken();
       try {
-        await fetch("http://localhost:8000/logout", {
+        await fetch(`${API_URL}/logout`, {
           method: "POST",
           headers: token ? { Authorization: "Bearer " + token } : {},
         });
@@ -258,8 +317,9 @@ document.addEventListener("DOMContentLoaded", () => {
   if (findBtn && birthdayInput) {
     function runFind() {
       if (!birthdayInput) return;
-      fetchBirthdays(birthdayInput.value, resultsContainer)
-        .then(updateActionButtonsVisibility);
+      fetchBirthdays(birthdayInput.value, resultsContainer).then(
+        updateActionButtonsVisibility,
+      );
     }
     findBtn.addEventListener("click", runFind);
     birthdayInput.addEventListener("keydown", (e) => {
@@ -276,10 +336,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (window.electron && window.electron.openExternal) {
         const result = await window.electron.openExternal(url);
         if (!result || result.ok !== true) {
-          try { window.open(url, "_blank", "noopener"); } catch {}
+          try {
+            window.open(url, "_blank", "noopener");
+          } catch {}
         }
       } else {
-        try { window.open(url, "_blank", "noopener"); } catch {}
+        try {
+          window.open(url, "_blank", "noopener");
+        } catch {}
       }
     });
   });
@@ -319,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
       sendBtn.setAttribute("aria-disabled", "true");
 
       try {
-        const res = await fetch("http://localhost:8000/send_card", {
+        const res = await fetch(`${API_URL}/send_card`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -328,7 +392,11 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(payload),
         });
         let data;
-        try { data = await res.json(); } catch { data = { error: "Invalid JSON response" }; }
+        try {
+          data = await res.json();
+        } catch {
+          data = { error: "Invalid JSON response" };
+        }
         if (!res.ok) {
           alert("Send failed");
           console.error("Send error detail:", data);

@@ -50,10 +50,15 @@ body {
 }
 
 .results {
-  max-width: 480px;
+  /* Widen the results area so the table can breathe on larger screens */
+  max-width: 960px; /* was 480px */
   margin: 12px auto 40px;
   font-size: 14px;
   line-height: 1.4;
+  width: 90%;
+}
+@media (min-width: 1400px) {
+  .results { max-width: 1200px; }
 }
 .results .loading { opacity: 0.8; font-style: italic; }
 .results ul { padding-left: 18px; margin: 8px 0; }
@@ -103,4 +108,86 @@ footer a {
 footer a:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+/* Results table styling */
+.results-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 8px;
+  background: var(--table-bg, #fff);
+}
+
+body.dark .results-table-wrapper {
+  /* Lighten dark mode base table background */
+  --border-color: #555;
+  --table-bg: #1e1f23; /* was #111 */
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.results-table th,
+.results-table td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--row-border, #e2e2e2);
+  max-width: 240px;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+body.dark .results-table th,
+body.dark .results-table td {
+  --row-border: #2a2a2a;
+}
+
+.results-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--head-bg, #f5f5f5);
+  z-index: 1;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.dark .results-table thead th {
+  /* Slightly lighter header for contrast */
+  --head-bg: #2a2d31; /* was #1d1d1d */
+}
+
+.results-table tbody tr:nth-child(odd) {
+  background: var(--stripe1, #fafafa);
+}
+.results-table tbody tr:nth-child(even) {
+  background: var(--stripe2, #f0f0f0);
+}
+
+body.dark .results-table tbody tr:nth-child(odd) {
+  --stripe1: #242528; /* was #161616 */
+}
+body.dark .results-table tbody tr:nth-child(even) {
+  --stripe2: #2c2e32; /* was #1c1c1c */
+}
+
+.results-table tbody tr:hover {
+  background: var(--hover-bg, #e9f3ff);
+}
+body.dark .results-table tbody tr:hover {
+  --hover-bg: #383d44; /* slightly lighter hover */
+}
+
+.results-table td small {
+  color: #555;
+  font-size: 11px;
+}
+body.dark .results-table td small {
+  color: #b8b8b8; /* lighten small text */
 }
