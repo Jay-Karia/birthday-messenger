@@ -8,7 +8,6 @@ Cross‑platform desktop app to:
 - Send emails (via SendGrid) and WhatsApp image messages (Meta Graph API)
 - Include father/mother contact details automatically if present
 
-
 ---
 
 ## ✨ Features
@@ -28,7 +27,7 @@ Cross‑platform desktop app to:
 
 Create a `.env`:
 
-```
+```powershell
 EMAIL_USER
 SENDGRID_API_KEY
 GROQ_API_KEY
