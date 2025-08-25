@@ -226,6 +226,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
   const uploadBtn = document.getElementById("upload-btn");
   const uploadInput = document.getElementById("upload-input");
+  const uploadTrigger = document.getElementById("upload-trigger");
+  const uploadFileLabel = document.getElementById("upload-file-label");
+  const uploadStatus = document.getElementById("upload-status");
 
   const findBtn = document.getElementById("find-btn");
   const birthdayInput = document.getElementById("birthday");
@@ -246,6 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (sendBtn) sendBtn.style.display = "none";
   if (clearBtn) clearBtn.style.display = "none";
+  if (uploadBtn) uploadBtn.style.display = "none"; // hide upload until auth
 
   if (resultsContainer) {
     const observer = new MutationObserver(updateActionButtonsVisibility);
@@ -255,6 +259,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (isAuthCached() && getToken() && authContainer && mainContainer) {
     authContainer.style.display = "none";
     mainContainer.style.display = "";
+    if (uploadBtn) uploadBtn.style.display = "";
+  } else if (isAuthCached() && getToken()) {
+    // For pages without mainContainer (e.g., upload_excel.html)
+    if (uploadBtn) uploadBtn.style.display = "";
   }
 
   // ---------- Login ----------
@@ -277,6 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
           setAuthCache();
           if (authContainer) authContainer.style.display = "none";
           if (mainContainer) mainContainer.style.display = "";
+          if (uploadBtn) uploadBtn.style.display = "";
         } else {
           loginError.textContent = data.error || "Login failed";
           loginError.style.display = "block";
@@ -307,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (passInput) passInput.value = "";
       if (resultsContainer) resultsContainer.innerHTML = "";
       updateActionButtonsVisibility();
+      if (uploadBtn) uploadBtn.style.display = "none";
     });
   }
 
@@ -325,6 +335,66 @@ document.addEventListener("DOMContentLoaded", () => {
         // TODO: Implement actual upload endpoint if required
         // Example: create FormData and POST to backend
       }
+    });
+  }
+
+  // Full upload component logic
+  if (uploadTrigger && uploadInput) {
+    uploadTrigger.addEventListener("click", () => uploadInput.click());
+    uploadInput.addEventListener("change", () => {
+      if (!uploadInput.files || !uploadInput.files[0]) {
+        if (uploadFileLabel) uploadFileLabel.textContent = "No file selected";
+        return;
+      }
+      const file = uploadInput.files[0];
+      if (uploadFileLabel) uploadFileLabel.textContent = file.name;
+      if (!file.name.toLowerCase().endsWith(".csv")) {
+        if (uploadStatus) {
+          uploadStatus.style.color = "#c0392b";
+          uploadStatus.textContent = "Only .csv files are allowed";
+        }
+        return;
+      }
+      if (!isAuthCached() || !getToken()) {
+        if (uploadStatus) {
+          uploadStatus.style.color = "#c0392b";
+          uploadStatus.textContent = "Login required";
+        }
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      if (uploadStatus) {
+        uploadStatus.style.color = "";
+        uploadStatus.textContent = "Uploading...";
+      }
+      fetch(`${API_URL}/upload`, {
+        method: "POST",
+        headers: { Authorization: "Bearer " + getToken() },
+        body: formData,
+      })
+        .then(async (res) => {
+          let data;
+          try { data = await res.json(); } catch { data = {}; }
+          if (res.ok) {
+            if (uploadStatus) {
+              uploadStatus.style.color = "#1e7e34";
+              uploadStatus.textContent = "Upload successful";
+            }
+          } else {
+            if (uploadStatus) {
+              uploadStatus.style.color = "#c0392b";
+              uploadStatus.textContent = data.error || "Upload failed";
+            }
+          }
+        })
+        .catch((err) => {
+          console.error("Upload error", err);
+          if (uploadStatus) {
+            uploadStatus.style.color = "#c0392b";
+            uploadStatus.textContent = "Network error";
+          }
+        });
     });
   }
 
