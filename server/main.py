@@ -1,4 +1,5 @@
 import os
+import csv
 import base64
 import secrets
 import asyncio
@@ -17,7 +18,6 @@ from sendgrid.helpers.mail import (
 )
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from openpyxl import load_workbook  # NEW
 from components.whatsapp_msg import send_whatsapp
 from components.text_ai import text_gen
 
@@ -43,7 +43,7 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CARD_TEMPLATE = os.path.join(BASE_DIR, "components", "card.png")
 FONT_PATH = os.path.join(BASE_DIR, "components", "font-title.ttf")
-EXCEL_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "dummy.xlsx"))
+CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "dummy.csv"))
 
 # --- Utilities ---
 
@@ -82,6 +82,7 @@ def parse_month_day(date_str: str) -> Optional[str]:
         return None
     try:
         if len(date_str) == 5 and date_str[2] == "-":
+            # Assume 2000 for validation
             datetime.strptime(f"2000-{date_str}", "%Y-%m-%d")
             return date_str
         if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
@@ -92,15 +93,24 @@ def parse_month_day(date_str: str) -> Optional[str]:
     return None
 
 
-def _coerce_birthday(cell_val) -> Optional[datetime]:
-    if isinstance(cell_val, datetime):
-        return cell_val
-    if isinstance(cell_val, date):
-        return datetime.combine(cell_val, datetime.min.time())
-    if isinstance(cell_val, str):
-        s = cell_val.strip()
-        # Try supported formats
-        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"):
+def _coerce_birthday(val) -> Optional[datetime]:
+    """
+    Try to parse a cell/string into a datetime for known formats.
+    Accepts: YYYY-MM-DD, DD/MM/YYYY, YYYY/MM/DD.
+    """
+    if isinstance(val, datetime):
+        return val
+    if isinstance(val, date):
+        return datetime.combine(val, datetime.min.time())
+    if isinstance(val, (int, float)):
+        # Unlikely with CSV (unless numeric epoch; ignoring)
+        return None
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return None
+        formats = ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d")
+        for fmt in formats:
             try:
                 return datetime.strptime(s, fmt)
             except ValueError:
@@ -108,54 +118,80 @@ def _coerce_birthday(cell_val) -> Optional[datetime]:
     return None
 
 
-def read_excel_matches(month_day: str) -> list[dict]:
+def _normalize_phone(val) -> str:
     """
-    Read the Excel workbook (headerless or with a header row) and build rows
-    that match month-day of birthday.
+    Convert phone values to a clean string while preserving any leading zeros or formatting if present.
+    """
+    if val is None:
+        return ""
+    if isinstance(val, (int, float)):
+        # Convert numeric to int string without scientific notation
+        # (assumes phone numbers aren't fractions)
+        try:
+            as_int = int(val)
+            return str(as_int)
+        except Exception:
+            return str(val)
+    s = str(val).strip()
+    return s
+
+
+def read_csv_matches(month_day: str) -> list[dict]:
+    """
+    Read CSV rows and return those matching the supplied MM-DD birthday.
+    Expected column order:
+      0 id
+      1 name
+      2 app_id
+      3 birthday (parse formats)
+      4 email
+      5 phone
+      6 father_email
+      7 father_phone
+      8 mother_email
+      9 mother_phone
+    Rows with unparsable birthdays are skipped. A header row is automatically skipped if
+    the birthday column cannot be parsed.
     """
     matches: list[dict] = []
-    if not os.path.exists(EXCEL_PATH):
+    if not os.path.exists(CSV_PATH):
+        print(f"[read_csv_matches] CSV not found: {CSV_PATH}")
         return matches
 
     try:
-        wb = load_workbook(EXCEL_PATH, data_only=True, read_only=True)
+        with open(CSV_PATH, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            for row in reader:
+                if not row:
+                    continue
+                # Ensure at least 4 columns (birthday index)
+                if len(row) < 4:
+                    continue
+                raw_bday = row[3]
+                bday_dt = _coerce_birthday(raw_bday)
+                if not bday_dt:
+                    # Probably header or invalid; skip
+                    continue
+                if bday_dt.strftime("%m-%d") != month_day:
+                    continue
+
+                def _safe(i):
+                    return row[i].strip() if len(row) > i and row[i] is not None else ""
+
+                matches.append({
+                    "id": _safe(0),
+                    "name": _safe(1),
+                    "app_id": _safe(2),
+                    "birthday": bday_dt.strftime("%Y-%m-%d"),
+                    "email": _safe(4),
+                    "phone": _normalize_phone(_safe(5)),
+                    "father_email": _safe(6),
+                    "father_phone": _normalize_phone(_safe(7)),
+                    "mother_email": _safe(8),
+                    "mother_phone": _normalize_phone(_safe(9)),
+                })
     except Exception as e:
-        print(f"[read_excel_matches] Failed to open workbook: {e}")
-        return matches
-
-    # Use first sheet
-    try:
-        sheet = wb[wb.sheetnames[0]]
-    except Exception:
-        return matches
-
-    for row in sheet.iter_rows(values_only=True):
-        # Expect at least 4 columns to attempt parse
-        if not row or len(row) < 4:
-            continue
-
-        birthday_raw = row[3]
-        bday = _coerce_birthday(birthday_raw)
-        if not bday:
-            # Likely a header row or invalid entry
-            continue
-
-        if bday.strftime("%m-%d") == month_day:
-            def _safe(idx):
-                return row[idx] if len(row) > idx and row[idx] is not None else ""
-
-            matches.append({
-                "id": _safe(0),
-                "name": _safe(1),
-                "app_id": _safe(2),
-                "birthday": bday.strftime("%Y-%m-%d"),
-                "email": _safe(4),
-                "phone": _safe(5),
-                "father_email": _safe(6),
-                "father_phone": _safe(7),
-                "mother_email": _safe(8),
-                "mother_phone": _safe(9),
-            })
+        print(f"[read_csv_matches] Error reading CSV: {e}")
 
     return matches
 
@@ -201,7 +237,7 @@ def filter_birthdays():
     if not month_day:
         return jsonify({"error": "Invalid date format. Use MM-DD or YYYY-MM-DD"}), 400
 
-    matches = read_excel_matches(month_day)
+    matches = read_csv_matches(month_day)
     formatted_date = datetime.strptime(f"2000-{month_day}", "%Y-%m-%d").strftime("%B %d")
 
     return jsonify({
@@ -221,6 +257,7 @@ def send_email():
     datas = request.json
     if not datas:
         return jsonify({"error": "No input data provided"}), 400
+
     # Normalize input: always work with a list of dicts
     if isinstance(datas, dict):
         data_list = [datas]
@@ -239,81 +276,87 @@ def send_email():
 
         name = entry.get("name", "Friend")
         subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
-        recipient_phone = entry.get("recipient_phone", "919486870915")
+        recipient_phone = entry.get("recipient_phone", "")
 
         father_email = entry.get("father_email")
         father_phone = entry.get("father_phone")
         mother_email = entry.get("mother_email")
         mother_phone = entry.get("mother_phone")
 
+        # Collect extra contacts
         extra_recipients = []
         if father_email:
             extra_recipients.append(father_email)
         if mother_email:
             extra_recipients.append(mother_email)
+
         extra_phones = []
         if father_phone:
             extra_phones.append(str(father_phone))
         if mother_phone:
             extra_phones.append(str(mother_phone))
 
-            # Generate AI message
-            try:
-                message = asyncio.run(text_gen(name))
-            except Exception as e:
-                results.append({"status": 500, "error": f"AI text generation failed: {e}"})
+        # Generate AI message
+        try:
+            message = asyncio.run(text_gen(name))
+        except Exception as e:
+            results.append({"status": 500, "error": f"AI text generation failed: {e}"})
+            continue
+
+        # Build card
+        try:
+            card_path = create_birthday_card(name, message)
+        except Exception as e:
+            results.append({"status": 500, "error": f"Card generation failed: {e}"})
+            continue
+
+        # Encode image
+        try:
+            with open(card_path, "rb") as f:
+                encoded_file = base64.b64encode(f.read()).decode()
+        except Exception as e:
+            results.append({"status": 500, "error": f"Attachment encoding failed: {e}"})
+            continue
+
+        attachment = Attachment(
+            FileContent(encoded_file),
+            FileName(os.path.basename(card_path)),
+            FileType("image/png"),
+            Disposition("attachment"),
+        )
+
+        all_recipients = [recipient] + extra_recipients
+
+        # Send WhatsApp (best-effort)
+        all_phones = [str(recipient_phone)] if recipient_phone else []
+        all_phones += extra_phones
+        for phone in all_phones:
+            if not phone:
                 continue
-
-            # Build card
             try:
-                card_path = create_birthday_card(name, message)
-            except Exception as e:
-                results.append({"status": 500, "error": f"Card generation failed: {e}"})
-                continue
+                send_whatsapp(message, phone, card_path)
+            except Exception:
+                pass
 
-            # Encode image
-            try:
-                with open(card_path, "rb") as f:
-                    encoded_file = base64.b64encode(f.read()).decode()
-            except Exception as e:
-                results.append({"status": 500, "error": f"Attachment encoding failed: {e}"})
-                continue
+        try:
+            sg = SendGridAPIClient(SENDGRID_API_KEY)
+            for email_addr in all_recipients:
+                email = Mail(
+                    from_email=FROM_EMAIL,
+                    to_emails=email_addr,
+                    subject=subject,
+                    html_content=f"<p>{message}</p>",
+                )
+                email.attachment = attachment
+                sg.send(email)
 
-            attachment = Attachment(
-                FileContent(encoded_file),
-                FileName(os.path.basename(card_path)),
-                FileType("image/png"),
-                Disposition("attachment"),
-            )
+            results.append({
+                "status": 200,
+                "message": f"Email sent successfully to {all_recipients}"
+            })
+        except Exception as e:
+            results.append({"status": 500, "error": f"Email send failed: {e}"})
 
-            all_recipients = [recipient] + extra_recipients
-
-            # Send WhatsApp (best-effort)
-            all_phones = [str(recipient_phone)] + extra_phones
-            for phone in all_phones:
-                try:
-                    send_whatsapp(message, phone, card_path)
-                except Exception:
-                    pass
-
-            try:
-                sg = SendGridAPIClient(SENDGRID_API_KEY)
-                for email_addr in all_recipients:
-                    email = Mail(
-                        from_email=FROM_EMAIL,
-                        to_emails=email_addr,
-                        subject=subject,
-                        html_content=f"<p>{message}</p>",
-                    )
-                    email.attachment = attachment
-                    sg.send(email)
-
-                results.append({
-                    "status": 200,
-                    "message": f"Email sent successfully to {all_recipients}"
-                })
-            except Exception as e:
-                results.append({"status": 500, "error": f"Email send failed: {e}"})
     return jsonify(results), 200
 
 
@@ -331,4 +374,5 @@ def server_error(e):
 
 
 if __name__ == "__main__":
+    # Default port changed earlier in Electron fetches to 8000; keep 5000 if you run separately
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)

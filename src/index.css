@@ -23,6 +23,20 @@ body {
   font-family: "Segoe UI", "Roboto", "Arial", sans-serif;
 }
 
+/* SRM Logo styling */
+.srm-logo-large {
+  display: block;
+  height: 104px;
+  margin: 12px auto 4px;
+}
+
+.srm-logo-small {
+  height: 34px;
+  margin: 12px 0 8px 5px; /* top margin tweaked */
+  display: inline-block;
+  vertical-align: middle;
+}
+
 #birthday {
   padding: 8px;
   font-size: 1em;

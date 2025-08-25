@@ -10,12 +10,11 @@
     <link rel="stylesheet" type="text/css" href="./index.css" />
   </head>
   <body>
-    <div id="content-wrapper"><!-- ADDED WRAPPER -->
-
+  
       <!-- Toggle Theme mode -->
       <button id="toggle-dark-mode" title="Toggle Theme">
         <span style="vertical-align: middle">
-          <!-- svg unchanged -->
+          <!-- svg -->
           <svg
             width="20"
             height="20"
@@ -37,6 +36,17 @@
               stroke="currentColor"
               stroke-width="2"
             />
+          </svg>
+        </span>
+      </button>
+
+      <!-- Upload Button -->
+      <button id="upload-btn" title="Upload Data" aria-label="Upload">
+        <span style="vertical-align: middle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle">
+            <path d="M12 16V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7 9l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </span>
       </button>
@@ -82,7 +92,7 @@
       <!-- Auth/Login Page -->
       <div id="auth-container">
         <div class="auth-box">
-          <img src="../public/srm-logo.png" alt="SRM Logo" style="height: 104px" />
+          <img src="../public/srm-logo.png" alt="SRM Logo" class="srm-logo-large" />
         </div>
         <h2>Login</h2>
         <input
@@ -103,20 +113,16 @@
 
       <!-- Main App Content -->
       <div id="main-container" style="display: none">
-        <img
-          src="../public/srm-logo.png"
-          alt="SRM Logo"
-          style="height: 34px; margin-left: 5px"
-        />
+        <img src="../public/srm-logo.png" alt="SRM Logo" class="srm-logo-small" />
 
         <div class="birthday-container">
           <label for="birthday" id="birthday-label">Select a birthday:</label>
-            <div class="birthday-box">
-              <input type="date" id="birthday" name="birthday" />
-              <button id="find-btn" type="button">
-                <span class="label">Find</span>
-              </button>
-            </div>
+          <div class="birthday-box">
+            <input type="date" id="birthday" name="birthday" />
+            <button id="find-btn" type="button">
+              <span class="label">Find</span>
+            </button>
+          </div>
         </div>
 
         <div id="results-container" class="results"></div>
@@ -140,13 +146,13 @@
           </button>
         </div>
       </div>
-    </div><!-- END content-wrapper -->
+    </div>
+    <!-- END content-wrapper -->
 
     <footer>
-      <a
-        href="https://github.com/Jay-Karia/birthday-messenger"
-        target="_blank"
-      >View on GitHub</a>
+      <a href="https://github.com/Jay-Karia/birthday-messenger" target="_blank"
+        >View on GitHub</a
+      >
     </footer>
 
     <script src="renderer.js"></script>

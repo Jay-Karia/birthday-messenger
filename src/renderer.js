@@ -224,6 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginError = document.getElementById("login-error");
   const logoutBtn = document.getElementById("logout-btn");
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
+  const uploadBtn = document.getElementById("upload-btn");
+  const uploadInput = document.getElementById("upload-input");
 
   const findBtn = document.getElementById("find-btn");
   const birthdayInput = document.getElementById("birthday");
@@ -311,6 +313,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Theme Toggle ----------
   if (toggleDarkModeBtn) {
     toggleDarkModeBtn.addEventListener("click", toggleThemeElectronBridge);
+  }
+
+  // ---------- Upload (placeholder) ----------
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener("click", () => uploadInput.click());
+    uploadInput.addEventListener("change", () => {
+      if (uploadInput.files && uploadInput.files[0]) {
+        const file = uploadInput.files[0];
+        console.log("Selected file:", file.name, file.type, file.size);
+        // TODO: Implement actual upload endpoint if required
+        // Example: create FormData and POST to backend
+      }
+    });
   }
 
   // ---------- Find Birthdays ----------
