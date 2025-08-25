@@ -2,6 +2,8 @@ import pandas as pd
 import glob
 import os
 
+#Add the files to ./server/components/xlsDump/ and jst call this function
+
 def csvDump():
     excel_files = glob.glob(os.path.join("./server/components/xlsDump/", "*.xls*"))
     target_keyword = "Student Master"
