@@ -10,7 +10,7 @@ Cross‑platform desktop app to:
 
 ---
 
-## ✨ Features
+## Features
 
 - Date picker (filters by MM-DD; year ignored)
 - Token authentication (login once; cached client side for 1 hour)
@@ -23,7 +23,7 @@ Cross‑platform desktop app to:
 
 ---
 
-## 🔐 Environment Variables
+## Environment Variables
 
 Create a `.env`:
 
@@ -43,7 +43,7 @@ CERTIFICATE_PASSWORD
 
 ---
 
-## 🚀 Setup Frontend (Development)
+## Setup Frontend (Development)
 
 1. Install Electron dependencies:
 
@@ -59,13 +59,13 @@ npm start
 
 ---
 
-## ⚙️ Setup Backend
+## Setup Backend
 
 Read the server [`README.md`](/server/README.md) file.
 
 ---
 
-## 🧩 Building & Packaging
+## Building & Packaging
 
 Electron Forge scripts:
 
@@ -84,13 +84,13 @@ Output artifacts go to `out/` or the forge default (`out` / `make` subfolders).
 
 ---
 
-## 👥 Contributors
+## Contributors
 
 - [Jay-Karia](https://github.com/Jay-Karia)
 - [shaunbenedict](https://github.com/shaunbenedict)
 
 ---
 
-## 📝 License
+## License
 
 MIT – see [`LICENSE`](/LICENSE).

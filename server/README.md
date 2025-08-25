@@ -1,6 +1,6 @@
 # Server
 
-## 🛠 Setup
+## Setup
 
 ### Install dependencies
 ```bash
@@ -14,7 +14,7 @@ python main.py
 
 ---
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### POST `/send_card`
 Send a birthday message to a user.
