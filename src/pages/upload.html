@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Birthday Messeneger | Upload Data</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self' 'unsafe-inline';"
+    />
+    <link rel="stylesheet" href="../index.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header
+      style="
+        position: relative;
+        height: 56px;
+        padding-left: 6px;
+        display: flex;
+        align-items: center;
+      "
+    >
+      <div style="flex: 1; display: flex; align-items: center; gap: 10px">
+        <img
+          src="../../public/srm-logo.png"
+          alt="SRM Logo"
+          class="srm-logo-small"
+          style="margin: 0"
+        />
+        <h1
+          style="
+            font-size: 18px;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+          "
+        >
+          Upload
+        </h1>
+      </div>
+      <!-- Toggle Theme mode -->
+      <button id="toggle-dark-mode" title="Toggle Theme">
+        <span style="vertical-align: middle">
+          <!-- svg -->
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            style="vertical-align: middle"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="10"
+              cy="10"
+              r="7"
+              stroke="currentColor"
+              stroke-width="2"
+              fill="none"
+            />
+            <path
+              d="M10 3V1M10 19v-2M17 10h2M1 10h2M15.66 15.66l1.42 1.42M2.92 2.92l1.42 1.42M15.66 4.34l1.42-1.42M2.92 17.08l1.42-1.42"
+              stroke="currentColor"
+              stroke-width="2"
+            />
+          </svg>
+        </span>
+      </button>
+
+      <!-- Home Button -->
+      <a href="../index.html">
+        <button id="upload-btn" title="Upload Data" aria-label="Upload">
+          <span style="vertical-align: middle">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              style="vertical-align: middle"
+            >
+              <path
+                d="M3 11.5L12 3l9 8.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M5 10v10h14V10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+              <path
+                d="M10 20v-6h4v6"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
+      </a>
+
+      <!-- Logout Button -->
+       <button id="logout-btn" title="Logout">
+        <span style="vertical-align: middle">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            style="vertical-align: middle"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <rect
+              x="3.5"
+              y="5.5"
+              width="7"
+              height="9"
+              rx="1.5"
+              stroke="currentColor"
+              stroke-width="1.6"
+              fill="none"
+            />
+            <path
+              d="M10 10h6"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            />
+            <path
+              d="M14 8l2 2-2 2"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+    </header>
+
+    <main style="max-width: 760px; margin: 10px auto 40px; padding: 0 16px">
+    </main>
+
+    <footer>
+      <a href="https://github.com/Jay-Karia/birthday-messenger" target="_blank"
+        >View on GitHub</a
+      >
+    </footer>
+
+    <script src="../renderer.js"></script>
+    <!-- <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const selectBtn = document.getElementById("select-file");
+        const submitBtn = document.getElementById("submit-file");
+        const input = document.getElementById("upload-input");
+        const label = document.getElementById("file-label");
+        const statusEl = document.getElementById("upload-status");
+        const homeBtn = document.getElementById("home-btn");
+        const themeBtn = document.getElementById("upload-theme-toggle");
+
+        if (homeBtn) {
+          homeBtn.addEventListener("click", () => {
+            window.location.href = "../index.html";
+          });
+        }
+
+        // Handle theme toggle specifically for this page
+        if (themeBtn) {
+          themeBtn.addEventListener("click", () => {
+            // Use the same theme toggle logic as renderer.js
+            if (window.electronAPI && window.electronAPI.setTheme) {
+              const isDark = document.body.classList.contains("dark");
+              const newTheme = isDark ? "light" : "dark";
+              window.electronAPI.setTheme(newTheme);
+              localStorage.setItem("theme_mode", newTheme);
+              document.body.classList.toggle("dark", newTheme === "dark");
+            } else {
+              // Fallback for web version
+              const isDark = document.body.classList.contains("dark");
+              const newTheme = isDark ? "light" : "dark";
+              localStorage.setItem("theme_mode", newTheme);
+              document.body.classList.toggle("dark", newTheme === "dark");
+            }
+          });
+        }
+
+        function hasAuth() {
+          const token = localStorage.getItem("auth_token");
+          const cache = localStorage.getItem("auth_cache");
+          if (!token || !cache) return false;
+          try {
+            const { expires } = JSON.parse(cache);
+            return Date.now() < expires;
+          } catch {
+            return false;
+          }
+        }
+
+        if (!hasAuth()) {
+          if (statusEl) {
+            statusEl.style.color = "#c0392b";
+            statusEl.textContent = "Login required to upload.";
+          }
+        }
+
+        if (selectBtn && input) {
+          selectBtn.addEventListener("click", () => input.click());
+          input.addEventListener("change", () => {
+            if (!input.files || !input.files[0]) {
+              label.textContent = "No file selected";
+              submitBtn.disabled = true;
+              return;
+            }
+            const file = input.files[0];
+            label.textContent = file.name;
+            const lower = file.name.toLowerCase();
+            const valid = lower.endsWith(".csv") || lower.endsWith(".xlsx");
+            if (!valid) {
+              statusEl.style.color = "#c0392b";
+              statusEl.textContent = "Only .csv or .xlsx allowed";
+              submitBtn.disabled = true;
+            } else {
+              statusEl.textContent = "";
+              submitBtn.disabled = !hasAuth();
+            }
+          });
+        }
+
+        if (submitBtn) {
+          submitBtn.addEventListener("click", () => {
+            if (!input.files || !input.files[0]) return;
+            if (!hasAuth()) {
+              statusEl.style.color = "#c0392b";
+              statusEl.textContent = "Login required";
+              return;
+            }
+            const file = input.files[0];
+            const isExcel = file.name.toLowerCase().endsWith(".xlsx");
+            const endpoint = isExcel ? "/upload_excel" : "/upload";
+            const fd = new FormData();
+            fd.append("file", file, file.name);
+            statusEl.style.color = "";
+            statusEl.textContent = "Uploading...";
+            fetch("http://localhost:8000" + endpoint, {
+              method: "POST",
+              headers: {
+                Authorization: "Bearer " + localStorage.getItem("auth_token"),
+              },
+              body: fd,
+            })
+              .then(async (res) => {
+                let data;
+                try {
+                  data = await res.json();
+                } catch {
+                  data = {};
+                }
+                if (res.ok) {
+                  statusEl.style.color = "#1e7e34";
+                  statusEl.textContent = "Upload successful";
+                } else {
+                  statusEl.style.color = "#c0392b";
+                  statusEl.textContent = data.error || "Upload failed";
+                }
+              })
+              .catch((err) => {
+                console.error(err);
+                statusEl.style.color = "#c0392b";
+                statusEl.textContent = "Network error";
+              });
+          });
+        }
+      });
+    </script> -->
+  </body>
+</html>

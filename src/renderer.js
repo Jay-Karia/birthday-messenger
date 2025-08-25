@@ -310,6 +310,14 @@ document.addEventListener("DOMContentLoaded", () => {
       clearToken();
       clearAuthCache();
       lastResultsPeople = [];
+      // If we're on a page without the mainContainer (e.g. upload page), redirect to home
+      if (!mainContainer) {
+        // Avoid redirect loop if already on home
+        const path = window.location.pathname || "";
+        if (!/index\.html?$/.test(path)) {
+          window.location.href = "../index.html";
+        }
+      }
       if (mainContainer) mainContainer.style.display = "none";
       if (authContainer) authContainer.style.display = "flex";
       if (userInput) userInput.value = "";
