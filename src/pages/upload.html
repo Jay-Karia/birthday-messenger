@@ -147,6 +147,108 @@
     </header>
 
     <main style="max-width: 760px; margin: 10px auto 40px; padding: 0 16px">
+      <section style="margin-top: 12px">
+        <h2 style="font-size: 20px; margin: 0 0 10px">Upload Excel Files by Year</h2>
+        <p style="font-size: 13px; line-height: 1.5; opacity: 0.8; margin-bottom: 20px">
+          Upload Excel (.xlsx) files for each academic year.
+        </p>
+
+        <!-- First Year Upload -->
+        <div style="margin-bottom: 20px; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <input type="file" id="first-year-input" style="display: none" accept=".xlsx" />
+            <button
+              id="select-first-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #555; border-radius: 6px; background: #555; color: #fff; cursor: pointer"
+            >
+              Choose 1st Year File
+            </button>
+            <button
+              id="upload-first-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #1f7c42; border-radius: 6px; background: #2b9b59; color: #fff; cursor: pointer"
+              disabled
+            >
+              Upload
+            </button>
+            <span id="first-year-label" style="font-size: 12px; opacity: 0.75">No file selected</span>
+            <span id="first-year-status" style="font-size: 12px"></span>
+          </div>
+        </div>
+
+        <!-- Second Year Upload -->
+        <div style="margin-bottom: 20px; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <input type="file" id="second-year-input" style="display: none" accept=".xlsx" />
+            <button
+              id="select-second-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #555; border-radius: 6px; background: #555; color: #fff; cursor: pointer"
+            >
+              Choose 2nd Year File
+            </button>
+            <button
+              id="upload-second-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #1f7c42; border-radius: 6px; background: #2b9b59; color: #fff; cursor: pointer"
+              disabled
+            >
+              Upload
+            </button>
+            <span id="second-year-label" style="font-size: 12px; opacity: 0.75">No file selected</span>
+            <span id="second-year-status" style="font-size: 12px"></span>
+          </div>
+        </div>
+
+        <!-- Third Year Upload -->
+        <div style="margin-bottom: 20px; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <input type="file" id="third-year-input" style="display: none" accept=".xlsx" />
+            <button
+              id="select-third-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #555; border-radius: 6px; background: #555; color: #fff; cursor: pointer"
+            >
+              Choose 3rd Year File
+            </button>
+            <button
+              id="upload-third-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #1f7c42; border-radius: 6px; background: #2b9b59; color: #fff; cursor: pointer"
+              disabled
+            >
+              Upload
+            </button>
+            <span id="third-year-label" style="font-size: 12px; opacity: 0.75">No file selected</span>
+            <span id="third-year-status" style="font-size: 12px"></span>
+          </div>
+        </div>
+
+        <!-- Fourth Year Upload -->
+        <div style="margin-bottom: 20px; padding: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+            <input type="file" id="fourth-year-input" style="display: none" accept=".xlsx" />
+            <button
+              id="select-fourth-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #555; border-radius: 6px; background: #555; color: #fff; cursor: pointer"
+            >
+              Choose 4th Year File
+            </button>
+            <button
+              id="upload-fourth-year"
+              type="button"
+              style="padding: 8px 16px; border: 1px solid #1f7c42; border-radius: 6px; background: #2b9b59; color: #fff; cursor: pointer"
+              disabled
+            >
+              Upload
+            </button>
+            <span id="fourth-year-label" style="font-size: 12px; opacity: 0.75">No file selected</span>
+            <span id="fourth-year-status" style="font-size: 12px"></span>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer>
@@ -156,129 +258,6 @@
     </footer>
 
     <script src="../renderer.js"></script>
-    <!-- <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const selectBtn = document.getElementById("select-file");
-        const submitBtn = document.getElementById("submit-file");
-        const input = document.getElementById("upload-input");
-        const label = document.getElementById("file-label");
-        const statusEl = document.getElementById("upload-status");
-        const homeBtn = document.getElementById("home-btn");
-        const themeBtn = document.getElementById("upload-theme-toggle");
-
-        if (homeBtn) {
-          homeBtn.addEventListener("click", () => {
-            window.location.href = "../index.html";
-          });
-        }
-
-        // Handle theme toggle specifically for this page
-        if (themeBtn) {
-          themeBtn.addEventListener("click", () => {
-            // Use the same theme toggle logic as renderer.js
-            if (window.electronAPI && window.electronAPI.setTheme) {
-              const isDark = document.body.classList.contains("dark");
-              const newTheme = isDark ? "light" : "dark";
-              window.electronAPI.setTheme(newTheme);
-              localStorage.setItem("theme_mode", newTheme);
-              document.body.classList.toggle("dark", newTheme === "dark");
-            } else {
-              // Fallback for web version
-              const isDark = document.body.classList.contains("dark");
-              const newTheme = isDark ? "light" : "dark";
-              localStorage.setItem("theme_mode", newTheme);
-              document.body.classList.toggle("dark", newTheme === "dark");
-            }
-          });
-        }
-
-        function hasAuth() {
-          const token = localStorage.getItem("auth_token");
-          const cache = localStorage.getItem("auth_cache");
-          if (!token || !cache) return false;
-          try {
-            const { expires } = JSON.parse(cache);
-            return Date.now() < expires;
-          } catch {
-            return false;
-          }
-        }
-
-        if (!hasAuth()) {
-          if (statusEl) {
-            statusEl.style.color = "#c0392b";
-            statusEl.textContent = "Login required to upload.";
-          }
-        }
-
-        if (selectBtn && input) {
-          selectBtn.addEventListener("click", () => input.click());
-          input.addEventListener("change", () => {
-            if (!input.files || !input.files[0]) {
-              label.textContent = "No file selected";
-              submitBtn.disabled = true;
-              return;
-            }
-            const file = input.files[0];
-            label.textContent = file.name;
-            const lower = file.name.toLowerCase();
-            const valid = lower.endsWith(".csv") || lower.endsWith(".xlsx");
-            if (!valid) {
-              statusEl.style.color = "#c0392b";
-              statusEl.textContent = "Only .csv or .xlsx allowed";
-              submitBtn.disabled = true;
-            } else {
-              statusEl.textContent = "";
-              submitBtn.disabled = !hasAuth();
-            }
-          });
-        }
-
-        if (submitBtn) {
-          submitBtn.addEventListener("click", () => {
-            if (!input.files || !input.files[0]) return;
-            if (!hasAuth()) {
-              statusEl.style.color = "#c0392b";
-              statusEl.textContent = "Login required";
-              return;
-            }
-            const file = input.files[0];
-            const isExcel = file.name.toLowerCase().endsWith(".xlsx");
-            const endpoint = isExcel ? "/upload_excel" : "/upload";
-            const fd = new FormData();
-            fd.append("file", file, file.name);
-            statusEl.style.color = "";
-            statusEl.textContent = "Uploading...";
-            fetch("http://localhost:8000" + endpoint, {
-              method: "POST",
-              headers: {
-                Authorization: "Bearer " + localStorage.getItem("auth_token"),
-              },
-              body: fd,
-            })
-              .then(async (res) => {
-                let data;
-                try {
-                  data = await res.json();
-                } catch {
-                  data = {};
-                }
-                if (res.ok) {
-                  statusEl.style.color = "#1e7e34";
-                  statusEl.textContent = "Upload successful";
-                } else {
-                  statusEl.style.color = "#c0392b";
-                  statusEl.textContent = data.error || "Upload failed";
-                }
-              })
-              .catch((err) => {
-                console.error(err);
-                statusEl.style.color = "#c0392b";
-                statusEl.textContent = "Network error";
-              });
-          });
-        }
-      });
-    </script> -->
+    <script src="./upload.js"></script>
   </body>
 </html>
