@@ -417,6 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("Send error detail:", data);
           return;
         }
+        // TODO: add all the mobile numbers and emails to the payload
         alert("Send succeeded");
       } catch (err) {
         console.error("Network/send error:", err);
