@@ -426,26 +426,37 @@ def csvDump():
         print("\nNo students skipped, all had DOBs!")
         return "All Students Processed"
     
-@app.route("/delete_xls", methods=["POST"])
-def delete_xls():
+@app.route("/delete_all_xls", methods=["POST"])
+def delete_all_xls():
     auth_error = require_auth()
     if auth_error:
         return auth_error
-    xls_delete = request.json
-    if not xls_delete or "filename" not in xls_delete:
-        return jsonify({"error": "Missing filename"}), 400
-    filename = xls_delete["filename"]
+
     base_dir = os.path.join(".", "server", "components", "xlsDump")
-    file_path = os.path.abspath(os.path.join(base_dir, filename))
-    if not file_path.startswith(os.path.abspath(base_dir)):
-        return jsonify({"error": "Invalid file path"}), 400
-    if not os.path.isfile(file_path):
-        return jsonify({"error": "File not found"}), 404
+    if not os.path.exists(base_dir):
+        return jsonify({"deleted": [], "message": "Directory does not exist"}), 200
+
+    deleted = []
+    failed = []
+
     try:
-        os.remove(file_path)
-        return jsonify({"message": f"Deleted {filename}"}), 200
+        for filename in os.listdir(base_dir):
+            if filename.lower().endswith((".xlsx", ".xls")):
+                file_path = os.path.join(base_dir, filename)
+                try:
+                    os.remove(file_path)
+                    deleted.append(filename)
+                except Exception as e:
+                    failed.append({"filename": filename, "error": str(e)})
+
+        return jsonify({
+            "deleted": deleted,
+            "failed": failed,
+            "count_deleted": len(deleted),
+            "message": "Deletion complete"
+        }), 200
     except Exception as e:
-        return jsonify({"error": f"Failed to delete file: {e}"}), 500
+        return jsonify({"error": f"Failed to delete files: {e}"}), 500
 
 @app.route("/list_files", methods=["GET"])
 def list_files():

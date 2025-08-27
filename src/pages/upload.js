@@ -20,11 +20,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingEl = document.getElementById('files-loading');
     const listEl = document.getElementById('files-list');
     const noFilesEl = document.getElementById('no-files');
+    const fileCountEl = document.getElementById('file-count');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+    const convertBtn = document.getElementById('convert-btn');
 
     if (!hasAuth()) {
       loadingEl.style.display = 'none';
       listEl.style.display = 'none';
       noFilesEl.style.display = 'block';
+      if (fileCountEl) fileCountEl.textContent = '0 files';
+      if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+      if (convertBtn) convertBtn.style.display = 'none';
       noFilesEl.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">🔒</div>
         <p style="margin: 0; font-size: 16px">Login required</p>
@@ -51,6 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           listEl.style.display = 'none';
           noFilesEl.style.display = 'block';
+          if (fileCountEl) fileCountEl.textContent = '0 files';
+          if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+          if (convertBtn) convertBtn.style.display = 'none';
         }
       })
       .catch(err => {
@@ -58,6 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
         loadingEl.style.display = 'none';
         listEl.style.display = 'none';
         noFilesEl.style.display = 'block';
+        if (fileCountEl) fileCountEl.textContent = '0 files';
+        if (deleteAllBtn) deleteAllBtn.style.display = 'none';
+        if (convertBtn) convertBtn.style.display = 'none';
         noFilesEl.innerHTML = `
           <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">⚠️</div>
           <p style="margin: 0; font-size: 16px; color: #374151">Error loading files</p>
@@ -69,6 +81,20 @@ document.addEventListener("DOMContentLoaded", () => {
   // Function to display files list
   function displayFiles(files) {
     const listEl = document.getElementById('files-list');
+    const fileCountEl = document.getElementById('file-count');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+    const convertBtn = document.getElementById('convert-btn');
+    
+    // Update file count and show/hide action buttons
+    if (fileCountEl) {
+      fileCountEl.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+    }
+    if (deleteAllBtn) {
+      deleteAllBtn.style.display = files.length > 0 ? 'flex' : 'none';
+    }
+    if (convertBtn) {
+      convertBtn.style.display = files.length > 0 ? 'flex' : 'none';
+    }
     
     // Always show the quick upload interface, even when files exist
     const noFilesEl = document.getElementById('no-files');
@@ -85,22 +111,39 @@ document.addEventListener("DOMContentLoaded", () => {
         display: flex; 
         align-items: center; 
         justify-content: space-between; 
-        padding: 12px; 
-        margin-bottom: 8px; 
+        padding: 16px; 
+        margin-bottom: 12px; 
         background: white; 
         border: 1px solid #e5e7eb; 
-        border-radius: 6px;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       ">
         <div style="flex: 1">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px">
-            <span style="font-size: 16px">📊</span>
-            <span style="font-weight: 600; color: #1f2937; font-size: 14px">${file.filename}</span>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px">
+            <span style="font-size: 20px">📊</span>
+            <span style="font-weight: 600; color: #1f2937; font-size: 16px">${file.filename}</span>
           </div>
-          <div style="font-size: 11px; color: #6b7280">
-            <span>📦 ${file.size_mb} MB</span>
-            <span style="margin-left: 12px">📅 ${new Date(file.uploaded_at).toLocaleDateString()}</span>
-            <span style="margin-left: 12px">🕒 ${new Date(file.uploaded_at).toLocaleTimeString()}</span>
+          <div style="font-size: 12px; color: #6b7280; margin-left: 32px">
+            <span style="
+              display: inline-block;
+              padding: 2px 8px;
+              background: #f3f4f6;
+              border-radius: 4px;
+              margin-right: 8px;
+            ">📦 ${file.size_mb} MB</span>
+            <span style="
+              display: inline-block;
+              padding: 2px 8px;
+              background: #f3f4f6;
+              border-radius: 4px;
+              margin-right: 8px;
+            ">📅 ${new Date(file.uploaded_at).toLocaleDateString()}</span>
+            <span style="
+              display: inline-block;
+              padding: 2px 8px;
+              background: #f3f4f6;
+              border-radius: 4px;
+            ">🕒 ${new Date(file.uploaded_at).toLocaleTimeString()}</span>
           </div>
         </div>
       </div>
@@ -419,4 +462,108 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
   });
+
+  // Delete All Files function
+  window.deleteAllFiles = function() {
+    if (!confirm('Are you sure you want to delete ALL Excel files? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!hasAuth()) {
+      console.log('Login required to delete files');
+      return;
+    }
+
+    // Update button state during operation
+    const deleteAllBtn = document.getElementById('delete-all-btn');
+    if (deleteAllBtn) {
+      deleteAllBtn.disabled = true;
+      deleteAllBtn.textContent = '🗑️ Deleting...';
+      deleteAllBtn.style.opacity = '0.6';
+    }
+
+    fetch('http://localhost:8000/delete_all_xls', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+      }
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (res.ok) {
+          console.log('All files deleted successfully');
+          loadCurrentFiles(); // Refresh the list
+        } else {
+          console.error('Delete all failed:', data.error);
+          alert('Failed to delete files: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(err => {
+        console.error('Delete all error:', err);
+        alert('Network error: Unable to delete files');
+      })
+      .finally(() => {
+        // Reset button state
+        if (deleteAllBtn) {
+          deleteAllBtn.disabled = false;
+          deleteAllBtn.innerHTML = '🗑️ Delete All';
+          deleteAllBtn.style.opacity = '1';
+        }
+      });
+  };
+
+  // Convert to CSV function
+  window.convertToCSV = function() {
+    if (!confirm('Convert all Excel files to a single CSV file? This will process all uploaded files.')) {
+      return;
+    }
+
+    if (!hasAuth()) {
+      console.log('Login required to convert files');
+      return;
+    }
+
+    // Update button state during operation
+    const convertBtn = document.getElementById('convert-btn');
+    if (convertBtn) {
+      convertBtn.disabled = true;
+      convertBtn.innerHTML = '⏳ Converting...';
+      convertBtn.style.opacity = '0.6';
+    }
+
+    fetch('http://localhost:8000/convert_to_csv', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+      }
+    })
+      .then(async res => {
+        const data = await res.json();
+        if (res.ok) {
+          console.log('Files converted successfully');
+          alert(`✅ Success! Converted ${data.files_processed || 'all'} Excel files to CSV. Generated ${data.records_count || 'multiple'} records.`);
+          // Optionally download the CSV file if provided
+          if (data.csv_file_url) {
+            window.open(data.csv_file_url, '_blank');
+          }
+        } else {
+          console.error('Conversion failed:', data.error);
+          alert('Failed to convert files: ' + (data.error || 'Unknown error'));
+        }
+      })
+      .catch(err => {
+        console.error('Conversion error:', err);
+        alert('Network error: Unable to convert files');
+      })
+      .finally(() => {
+        // Reset button state
+        if (convertBtn) {
+          convertBtn.disabled = false;
+          convertBtn.innerHTML = '🔄 Convert to CSV';
+          convertBtn.style.opacity = '1';
+        }
+      });
+  };
 });

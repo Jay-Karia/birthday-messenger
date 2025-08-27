@@ -177,6 +177,65 @@
             position: relative;
           "
         >
+          <!-- Action buttons header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1f2937">Uploaded Files</h3>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <div id="file-count" style="
+                background: #374151;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 500;
+              ">0 files</div>
+              <button 
+                id="convert-btn"
+                onclick="convertToCSV()"
+                style="
+                  padding: 6px 12px; 
+                  border: 1px solid #059669; 
+                  border-radius: 6px; 
+                  background: white; 
+                  color: #059669; 
+                  cursor: pointer; 
+                  font-size: 12px;
+                  font-weight: 500;
+                  transition: all 0.2s ease;
+                  display: none;
+                  align-items: center;
+                  gap: 4px;
+                "
+                onmouseover="this.style.background='#059669'; this.style.color='white'"
+                onmouseout="this.style.background='white'; this.style.color='#059669'"
+              >
+                🔄 Convert to CSV
+              </button>
+              <button 
+                id="delete-all-btn"
+                onclick="deleteAllFiles()"
+                style="
+                  padding: 6px 12px; 
+                  border: 1px solid #dc2626; 
+                  border-radius: 6px; 
+                  background: white; 
+                  color: #dc2626; 
+                  cursor: pointer; 
+                  font-size: 12px;
+                  font-weight: 500;
+                  transition: all 0.2s ease;
+                  display: none;
+                  align-items: center;
+                  gap: 4px;
+                "
+                onmouseover="this.style.background='#dc2626'; this.style.color='white'"
+                onmouseout="this.style.background='white'; this.style.color='#dc2626'"
+              >
+                🗑️ Delete All
+              </button>
+            </div>
+          </div>
+
           <div
             id="files-loading"
             style="
