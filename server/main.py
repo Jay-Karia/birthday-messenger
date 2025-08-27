@@ -437,7 +437,7 @@ def csvDump():
     if auth_error:
         return auth_error
 
-    excel_files = glob.glob(os.path.join("./server/components/xlsDump/", "*.xls*"))
+    excel_files = glob.glob(os.path.join("./components/xlsDump/", "*.xls*"))
     target_keyword = "Student Master"
     skipped_students: list[str] = []
     seen_students: set[str] = set()
@@ -546,7 +546,7 @@ def delete_all_xls():
     if auth_error:
         return auth_error
 
-    base_dir = os.path.join(".", "server", "components", "xlsDump")
+    base_dir = os.path.join(".", "components", "xlsDump")
     if not os.path.exists(base_dir):
         return jsonify({"deleted": [], "message": "Directory does not exist"}), 200
 
