@@ -45,7 +45,7 @@ FROM_EMAIL = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CARD_TEMPLATE = os.path.join(BASE_DIR, "components", "card.png")
 FONT_PATH = os.path.join(BASE_DIR, "components", "font-title.ttf")
-CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "dummy.csv"))
+CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "All_StudentMaster.csv"))
 
 # --- Utilities ---
 

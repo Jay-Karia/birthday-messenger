@@ -9,6 +9,20 @@
       content="script-src 'self' 'unsafe-inline';"
     />
     <link rel="stylesheet" href="../index.css" />
+    <style>
+      /* Dark mode title text */
+      body.dark main h2,
+      body.dark #current-files-container h3 {
+        color: var(--text-primary) !important;
+      }
+
+      /* Dark mode quick upload slots */
+      body.dark .upload-slot {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-dashed) !important;
+        color: var(--text-secondary) !important;
+      }
+    </style>
   </head>
   <body>
     <!-- Header -->
@@ -146,6 +160,9 @@
       </button>
     </header>
 
+    <!-- Hidden file input for Excel upload -->
+    <input type="file" id="upload-input" style="display: none;" accept=".xlsx,.xls" multiple />
+
     <main style="max-width: 800px; margin: 20px auto 40px; padding: 0 20px">
       <!-- Current Files Section -->
       <section style="margin-bottom: 32px">
@@ -276,8 +293,8 @@
                 margin-top: 20px;
               "
             >
-              <!-- 1st Year Slot -->
-              <div
+                <div
+                class="upload-slot"
                 style="
                   border: 2px dashed #d1d5db;
                   border-radius: 8px;
@@ -288,9 +305,9 @@
                   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
                 "
                 onclick="triggerFileUpload('first')"
-                onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'"
-                onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'"
-              >
+                onmouseover="this.style.borderColor='#6b7280'; this.style.background='#f3f4f6'"
+                onmouseout="this.style.borderColor='#d1d5db'; this.style.background='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'"
+                >
                 <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">
                   Click to upload
                 </p>
@@ -301,7 +318,7 @@
                   accept=".xlsx,.xls"
                   onchange="handleQuickUpload('first', this)"
                 />
-              </div>
+                </div>
             </div>
           </div>
         </div>
@@ -318,3 +335,61 @@
     <script src="./upload.js"></script>
   </body>
 </html>
+
+<style>
+  /* Section headers */
+      main h2 {
+        color: var(--text-primary) !important;
+      }
+    
+      /* Dark theme overrides for inline styles */
+      body.dark #current-files-container {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-color) !important;
+      }
+      body.dark #files-loading,
+      body.dark #no-files,
+      body.dark main {
+        background: var(--bg-primary) !important;
+        color: var(--text-secondary) !important;
+      }
+      body.dark button {
+        background: var(--button-bg) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+      }
+      body.dark button:hover {
+        background: var(--button-hover-bg) !important;
+      }
+      body.dark #convert-btn {
+        border-color: var(--success-color) !important;
+        color: var(--success-color) !important;
+      }
+      body.dark #convert-btn:hover {
+        background: var(--success-color) !important;
+        color: #fff !important;
+      }
+      body.dark #delete-all-btn {
+        border-color: var(--danger-color) !important;
+        color: var(--danger-color) !important;
+      }
+      body.dark #delete-all-btn:hover {
+        background: var(--danger-color) !important;
+        color: #fff !important;
+      }
+      body.dark .upload-slot {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-dashed) !important;
+      }
+      body.dark .upload-slot:hover {
+        background: var(--button-hover-bg) !important;
+        border-color: var(--text-secondary) !important;
+      }
+      body.dark .file-item {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-color) !important;
+      }
+      body.dark .file-item:hover {
+        box-shadow: 0 8px 15px var(--shadow) !important;
+      }
+</style>

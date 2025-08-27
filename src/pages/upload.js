@@ -107,17 +107,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     listEl.innerHTML = files.map(file => `
-      <div style="
+      <div class="file-item" style="
         display: flex; 
         align-items: center; 
         justify-content: space-between; 
-        padding: 16px; 
-        margin-bottom: 12px; 
-        background: white; 
-        border: 1px solid #e5e7eb; 
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      ">
+        padding: 20px; 
+        margin-bottom: 16px; 
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
+        border: 1px solid #e2e8f0; 
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)'">
         <div style="flex: 1">
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px">
             <span style="font-size: 20px">📊</span>
@@ -566,4 +567,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
   };
+
+  // Theme toggle functionality
+  const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
+  const uploadInput = document.getElementById("upload-input");
+  const uploadBtn = document.getElementById("upload-btn");
+  
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener("click", () => uploadInput.click());
+    uploadInput.addEventListener("change", () => {
+      const files = Array.from(uploadInput.files);
+      if (files.length === 0) return;
+      handleMultipleUpload(files);
+    });
+  }
 });

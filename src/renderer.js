@@ -340,8 +340,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (uploadInput.files && uploadInput.files[0]) {
         const file = uploadInput.files[0];
         console.log("Selected file:", file.name, file.type, file.size);
-        // TODO: Implement actual upload endpoint if required
-        // Example: create FormData and POST to backend
       }
     });
   }
