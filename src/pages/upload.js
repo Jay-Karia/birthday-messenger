@@ -84,6 +84,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const fileCountEl = document.getElementById('file-count');
     const deleteAllBtn = document.getElementById('delete-all-btn');
     const convertBtn = document.getElementById('convert-btn');
+    // cache for theme re-render
+    window.__currentUploadFiles = files;
     
     // Update file count and show/hide action buttons
     if (fileCountEl) {
@@ -106,49 +108,37 @@ document.addEventListener("DOMContentLoaded", () => {
       headerText.textContent = `${files.length} file(s) uploaded`;
     }
     
-    listEl.innerHTML = files.map(file => `
-      <div class="file-item" style="
-        display: flex; 
-        align-items: center; 
-        justify-content: space-between; 
-        padding: 20px; 
-        margin-bottom: 16px; 
-        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); 
-        border: 1px solid #e2e8f0; 
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: all 0.2s ease;
-      " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)'">
-        <div style="flex: 1">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px">
-            <span style="font-size: 20px">📊</span>
-            <span style="font-weight: 600; color: #1f2937; font-size: 16px">${file.filename}</span>
+    const dark = document.body.classList.contains('dark');
+    const itemBg = dark ? 'linear-gradient(135deg, #23272f 0%, #181a20 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)';
+    const borderColor = dark ? '#374151' : '#e2e8f0';
+    const nameColor = dark ? 'var(--text-primary, #f3f4f6)' : '#1f2937';
+    const metaColor = dark ? 'var(--text-secondary, #9ca3af)' : '#6b7280';
+    const badgeBg = dark ? '#2d3238' : '#f3f4f6';
+    const badgeColor = dark ? '#d1d5db' : '#374151';
+
+    listEl.innerHTML = files.map(file => {
+      const date = new Date(file.uploaded_at);
+      return `
+        <div class="file-item" style="
+          display:flex;align-items:center;justify-content:space-between;
+          padding:20px;margin-bottom:16px;background:${itemBg};
+          border:1px solid ${borderColor};border-radius:12px;
+          box-shadow:0 4px 6px rgba(0,0,0,0.05);transition:all .2s ease;"
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)'"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)'">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+              <span style="font-size:20px">📊</span>
+              <span style="font-weight:600;color:${nameColor};font-size:16px">${file.filename}</span>
+            </div>
+            <div style="font-size:12px;color:${metaColor};margin-left:32px">
+              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;margin-right:8px;">📦 ${file.size_mb} MB</span>
+              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;margin-right:8px;">📅 ${date.toLocaleDateString()}</span>
+              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;">🕒 ${date.toLocaleTimeString()}</span>
+            </div>
           </div>
-          <div style="font-size: 12px; color: #6b7280; margin-left: 32px">
-            <span style="
-              display: inline-block;
-              padding: 2px 8px;
-              background: #f3f4f6;
-              border-radius: 4px;
-              margin-right: 8px;
-            ">📦 ${file.size_mb} MB</span>
-            <span style="
-              display: inline-block;
-              padding: 2px 8px;
-              background: #f3f4f6;
-              border-radius: 4px;
-              margin-right: 8px;
-            ">📅 ${new Date(file.uploaded_at).toLocaleDateString()}</span>
-            <span style="
-              display: inline-block;
-              padding: 2px 8px;
-              background: #f3f4f6;
-              border-radius: 4px;
-            ">🕒 ${new Date(file.uploaded_at).toLocaleTimeString()}</span>
-          </div>
-        </div>
-      </div>
-    `).join('');
+        </div>`;
+    }).join('');
   }
 
   // Global functions for file management
@@ -670,6 +660,19 @@ document.addEventListener("DOMContentLoaded", () => {
         // reset input so selecting the same file again still triggers change
         hiddenMainInput.value = '';
       }
+    });
+  }
+
+  // Re-render files on theme toggle so inline dynamic colors update
+  const themeToggleBtn = document.getElementById('toggle-dark-mode');
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener('click', () => {
+      // Slight delay to allow body.dark class to apply
+      setTimeout(() => {
+        if (window.__currentUploadFiles) {
+          displayFiles(window.__currentUploadFiles);
+        }
+      }, 30);
     });
   }
 });

@@ -185,14 +185,7 @@
 
         <div
           id="current-files-container"
-          style="
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 20px;
-            min-height: 120px;
-            position: relative;
-          "
+          class="excel-files-container"
         >
           <!-- Action buttons header -->
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px">
@@ -392,4 +385,19 @@
       body.dark .file-item:hover {
         box-shadow: 0 8px 15px var(--shadow) !important;
       }
+</style>
+<style>
+  .excel-files-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 120px;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  body.dark .excel-files-container {
+    background: linear-gradient(135deg, #23272f 0%, #181a20 100%) !important;
+    border: 1px solid #374151 !important;
+  }
 </style>
