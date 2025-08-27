@@ -77,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Update the header text when files exist
     const headerText = noFilesEl.querySelector('p');
     if (headerText && files.length > 0) {
-      headerText.textContent = `${files.length} file(s) uploaded - Upload more files below`;
+      headerText.textContent = `${files.length} file(s) uploaded`;
     }
     
     listEl.innerHTML = files.map(file => `
@@ -102,42 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <span style="margin-left: 12px">📅 ${new Date(file.uploaded_at).toLocaleDateString()}</span>
             <span style="margin-left: 12px">🕒 ${new Date(file.uploaded_at).toLocaleTimeString()}</span>
           </div>
-        </div>
-        <div style="display: flex; gap: 6px">
-          <button 
-            onclick="replaceFile('${file.filename}')"
-            style="
-              padding: 4px 8px; 
-              border: 1px solid #6b7280; 
-              border-radius: 4px; 
-              background: white; 
-              color: #6b7280; 
-              cursor: pointer; 
-              font-size: 11px;
-              transition: all 0.2s ease;
-            "
-            onmouseover="this.style.background='#6b7280'; this.style.color='white'"
-            onmouseout="this.style.background='white'; this.style.color='#6b7280'"
-          >
-            🔄 Replace
-          </button>
-          <button 
-            onclick="deleteFile('${file.filename}')"
-            style="
-              padding: 4px 8px; 
-              border: 1px solid #374151; 
-              border-radius: 4px; 
-              background: white; 
-              color: #374151; 
-              cursor: pointer; 
-              font-size: 11px;
-              transition: all 0.2s ease;
-            "
-            onmouseover="this.style.background='#374151'; this.style.color='white'"
-            onmouseout="this.style.background='white'; this.style.color='#374151'"
-          >
-            🗑️ Delete
-          </button>
         </div>
       </div>
     `).join('');

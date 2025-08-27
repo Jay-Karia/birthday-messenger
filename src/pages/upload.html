@@ -108,7 +108,7 @@
       </a>
 
       <!-- Logout Button -->
-       <button id="logout-btn" title="Logout">
+      <button id="logout-btn" title="Logout">
         <span style="vertical-align: middle">
           <svg
             width="20"
@@ -150,157 +150,98 @@
       <!-- Current Files Section -->
       <section style="margin-bottom: 32px">
         <div style="text-align: center; margin-bottom: 20px">
-          <h2 style="font-size: 24px; margin: 0 0 8px; font-weight: 600; color: #1f2937">Currently Used Files</h2>
+          <h2
+            style="
+              font-size: 24px;
+              margin: 0 0 8px;
+              font-weight: 600;
+              color: #1f2937;
+            "
+          >
+            Upload Excel Files
+          </h2>
           <p style="font-size: 14px; line-height: 1.5; opacity: 0.7">
-            Manage your uploaded Excel files. These files are currently being used for birthday data.
+            Manage your uploaded Excel files. These files are currently being
+            used for birthday data.
           </p>
         </div>
-        
-        <div id="current-files-container" style="
-          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); 
-          border: 1px solid #e5e7eb; 
-          border-radius: 12px; 
-          padding: 20px;
-          min-height: 120px;
-          position: relative;
-        ">
-          <div id="files-loading" style="
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 80px;
-            color: #6b7280;
-          ">
+
+        <div
+          id="current-files-container"
+          style="
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 120px;
+            position: relative;
+          "
+        >
+          <div
+            id="files-loading"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 80px;
+              color: #6b7280;
+            "
+          >
             <span style="margin-right: 8px">⏳</span> Loading files...
           </div>
-          
+
           <div id="files-list" style="display: none">
             <!-- Files will be populated here by JavaScript -->
           </div>
-          
-          <div id="no-files" style="
-            display: none; 
-            padding: 20px;
-            color: #6b7280;
-          ">
+
+          <div
+            id="no-files"
+            style="display: none; padding: 20px; color: #6b7280"
+          >
             <div style="text-align: center; margin-bottom: 24px">
-              <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">📂</div>
+              <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">
+                📂
+              </div>
               <p style="margin: 0; font-size: 16px">No files uploaded yet</p>
-              <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.7">Upload Excel files for each academic year</p>
+              <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.7">
+                Upload Excel files for each academic year
+              </p>
             </div>
-            
+
             <!-- Quick upload slots for each year -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-top: 20px">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 16px;
+                margin-top: 20px;
+              "
+            >
               <!-- 1st Year Slot -->
-              <div style="
-                border: 2px dashed #d1d5db; 
-                border-radius: 8px; 
-                padding: 20px; 
-                text-align: center; 
-                transition: all 0.3s ease;
-                cursor: pointer;
-                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-              " onclick="triggerFileUpload('first')" onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'">
-                <div style="
-                  display: inline-flex; 
-                  align-items: center; 
-                  justify-content: center; 
-                  width: 40px; 
-                  height: 40px; 
-                  background: linear-gradient(135deg, #374151, #1f2937); 
-                  color: white; 
-                  border-radius: 10px; 
-                  font-size: 18px; 
-                  font-weight: 700;
-                  margin-bottom: 8px;
-                ">1</div>
-                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">1st Year</p>
-                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">Click to upload</p>
-                <input type="file" id="quick-first-input" style="display: none" accept=".xlsx,.xls" onchange="handleQuickUpload('first', this)" />
-              </div>
-
-              <!-- 2nd Year Slot -->
-              <div style="
-                border: 2px dashed #d1d5db; 
-                border-radius: 8px; 
-                padding: 20px; 
-                text-align: center; 
-                transition: all 0.3s ease;
-                cursor: pointer;
-                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-              " onclick="triggerFileUpload('second')" onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'">
-                <div style="
-                  display: inline-flex; 
-                  align-items: center; 
-                  justify-content: center; 
-                  width: 40px; 
-                  height: 40px; 
-                  background: linear-gradient(135deg, #4b5563, #374151); 
-                  color: white; 
-                  border-radius: 10px; 
-                  font-size: 18px; 
-                  font-weight: 700;
-                  margin-bottom: 8px;
-                ">2</div>
-                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">2nd Year</p>
-                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">Click to upload</p>
-                <input type="file" id="quick-second-input" style="display: none" accept=".xlsx,.xls" onchange="handleQuickUpload('second', this)" />
-              </div>
-
-              <!-- 3rd Year Slot -->
-              <div style="
-                border: 2px dashed #d1d5db; 
-                border-radius: 8px; 
-                padding: 20px; 
-                text-align: center; 
-                transition: all 0.3s ease;
-                cursor: pointer;
-                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-              " onclick="triggerFileUpload('third')" onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'">
-                <div style="
-                  display: inline-flex; 
-                  align-items: center; 
-                  justify-content: center; 
-                  width: 40px; 
-                  height: 40px; 
-                  background: linear-gradient(135deg, #6b7280, #4b5563); 
-                  color: white; 
-                  border-radius: 10px; 
-                  font-size: 18px; 
-                  font-weight: 700;
-                  margin-bottom: 8px;
-                ">3</div>
-                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">3rd Year</p>
-                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">Click to upload</p>
-                <input type="file" id="quick-third-input" style="display: none" accept=".xlsx,.xls" onchange="handleQuickUpload('third', this)" />
-              </div>
-
-              <!-- 4th Year Slot -->
-              <div style="
-                border: 2px dashed #d1d5db; 
-                border-radius: 8px; 
-                padding: 20px; 
-                text-align: center; 
-                transition: all 0.3s ease;
-                cursor: pointer;
-                background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-              " onclick="triggerFileUpload('fourth')" onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'">
-                <div style="
-                  display: inline-flex; 
-                  align-items: center; 
-                  justify-content: center; 
-                  width: 40px; 
-                  height: 40px; 
-                  background: linear-gradient(135deg, #9ca3af, #6b7280); 
-                  color: white; 
-                  border-radius: 10px; 
-                  font-size: 18px; 
-                  font-weight: 700;
-                  margin-bottom: 8px;
-                ">4</div>
-                <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">4th Year</p>
-                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">Click to upload</p>
-                <input type="file" id="quick-fourth-input" style="display: none" accept=".xlsx,.xls" onchange="handleQuickUpload('fourth', this)" />
+              <div
+                style="
+                  border: 2px dashed #d1d5db;
+                  border-radius: 8px;
+                  padding: 20px;
+                  text-align: center;
+                  transition: all 0.3s ease;
+                  cursor: pointer;
+                  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+                "
+                onclick="triggerFileUpload('first')"
+                onmouseover="this.style.borderColor='#6b7280'; this.style.backgroundColor='#f3f4f6'"
+                onmouseout="this.style.borderColor='#d1d5db'; this.style.backgroundColor='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'"
+              >
+                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">
+                  Click to upload
+                </p>
+                <input
+                  type="file"
+                  id="quick-first-input"
+                  style="display: none"
+                  accept=".xlsx,.xls"
+                  onchange="handleQuickUpload('first', this)"
+                />
               </div>
             </div>
           </div>
