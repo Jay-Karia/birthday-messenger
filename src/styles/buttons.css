@@ -24,6 +24,21 @@
 #upload-btn:focus-visible { outline: 2px solid #888; outline-offset: 2px; }
 body.dark #upload-btn:focus-visible { outline-color: #ccc; }
 
+#home-btn {
+  position: absolute;
+  top: 16px;
+  right: 112px; /* place to left of theme toggle */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: inherit;
+}
+#home-btn:hover { opacity: 0.85; }
+#home-btn:active { transform: translateY(1px); }
+#home-btn:focus-visible { outline: 2px solid #888; outline-offset: 2px; }
+body.dark #home-btn:focus-visible { outline-color: #ccc; }
+
 #find-btn {
   padding: 8px 20px;
   font-size: 1em;
