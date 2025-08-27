@@ -47,7 +47,9 @@ CARD_TEMPLATE = os.path.join(BASE_DIR, "components", "card.png")
 FONT_PATH = os.path.join(BASE_DIR, "components", "font-title.ttf")
 CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "All_StudentMaster.csv"))
 
-# --- Utilities ---
+# --------------------------------------------------------------------------------------
+# Utilities
+# --------------------------------------------------------------------------------------
 
 
 def create_birthday_card(name: str, message: str) -> str:
@@ -84,7 +86,6 @@ def parse_month_day(date_str: str) -> Optional[str]:
         return None
     try:
         if len(date_str) == 5 and date_str[2] == "-":
-            # Assume 2000 for validation
             datetime.strptime(f"2000-{date_str}", "%Y-%m-%d")
             return date_str
         if len(date_str) == 10 and date_str[4] == "-" and date_str[7] == "-":
@@ -98,20 +99,25 @@ def parse_month_day(date_str: str) -> Optional[str]:
 def _coerce_birthday(val) -> Optional[datetime]:
     """
     Try to parse a cell/string into a datetime for known formats.
-    Accepts: YYYY-MM-DD, DD/MM/YYYY, YYYY/MM/DD.
+    Accepts:
+      YYYY-MM-DD
+      DD/MM/YYYY
+      YYYY/MM/DD
+      DD-MM-YYYY
+      MM-DD-YYYY  (fallback)
     """
     if isinstance(val, datetime):
         return val
     if isinstance(val, date):
         return datetime.combine(val, datetime.min.time())
     if isinstance(val, (int, float)):
-        # Unlikely with CSV (unless numeric epoch; ignoring)
+        # Not handling Excel serial numbers here; could be added if needed.
         return None
     if isinstance(val, str):
         s = val.strip()
         if not s:
             return None
-        formats = ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d")
+        formats = ("%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y", "%m-%d-%Y")
         for fmt in formats:
             try:
                 return datetime.strptime(s, fmt)
@@ -120,86 +126,155 @@ def _coerce_birthday(val) -> Optional[datetime]:
     return None
 
 
+def _normalize_phone_generic(raw: str) -> str:
+    """
+    Normalize phone: keep digits, ensure '91' prefix if >=10 digits and no country code yet.
+    """
+    if not raw:
+        return ""
+    digits = "".join(ch for ch in str(raw) if ch.isdigit())
+    if not digits:
+        return ""
+    # simple heuristic
+    if len(digits) >= 10 and not digits.startswith("91"):
+        digits = "91" + digits
+    return digits
+
+
+# Legacy function still used by /send_card payload generation (left intact)
 def _normalize_phone(val) -> str:
-    """
-    Convert phone values to a clean string while preserving any leading zeros or formatting if present.
-    """
     if val is None:
         return ""
     if isinstance(val, (int, float)):
-        # Convert numeric to int string without scientific notation
-        # (assumes phone numbers aren't fractions)
         try:
-            as_int = int(val)
-            return str(as_int)
+            return str(int(val))
         except Exception:
             return str(val)
-    s = str(val).strip()
-    return s
+    return str(val).strip()
+
+
+# ---------------------------------------------
+# Header-aware CSV field mapping infrastructure
+# ---------------------------------------------
+FIELD_SYNONYMS = {
+    "id": [
+        "id", "register number", "reg no", "reg number", "roll no", "roll number", "registration no"
+    ],
+    "name": ["student name", "name", "full name"],
+    "app_id": ["app id", "application id", "application number", "application no", "app no"],
+    "birthday": ["dob", "date of birth", "birth date", "birthday"],
+    "email": ["email", "email id", "email address", "mail id", "mail"],
+    "phone": [
+        "student whatsapp no.", "student whatsapp", "student whatsapp number",
+        "student mobile", "student mobile no", "student phone", "phone", "mobile"
+    ],
+    "father_email": ["father email", "father mail", "father mail id", "father email id"],
+    "father_phone": [
+        "father phone", "father mobile", "father mobile no", "father whatsapp",
+        "father whatsapp no.", "father whatsapp number", "parent whatsapp no."
+    ],
+    "mother_email": ["mother email", "mother mail", "mother mail id", "mother email id"],
+    "mother_phone": [
+        "mother phone", "mother mobile", "mother mobile no", "mother whatsapp",
+        "mother whatsapp no.", "mother whatsapp number"
+    ],
+}
+
+
+def _normalize_header(h: str) -> str:
+    return "".join(ch for ch in h.lower().strip() if ch.isalnum() or ch == " ")
+
+
+def _map_headers(columns: list[str]) -> dict:
+    """
+    Returns a mapping from internal field -> actual CSV column name (or None)
+    using synonyms with flexible containment matching.
+    """
+    norm_columns = { _normalize_header(c): c for c in columns }
+    mapping = { k: None for k in FIELD_SYNONYMS.keys() }
+    for internal, candidates in FIELD_SYNONYMS.items():
+        for candidate in candidates:
+            norm_candidate = _normalize_header(candidate)
+            for nc_key, original in norm_columns.items():
+                # equality or candidate contained in column header
+                if nc_key == norm_candidate or norm_candidate in nc_key:
+                    mapping[internal] = original
+                    break
+            if mapping[internal]:
+                break
+    return mapping
 
 
 def read_csv_matches(month_day: str) -> list[dict]:
     """
-    Read CSV rows and return those matching the supplied MM-DD birthday.
-    Expected column order:
-      0 id
-      1 name
-      2 app_id
-      3 birthday (parse formats)
-      4 email
-      5 phone
-      6 father_email
-      7 father_phone
-      8 mother_email
-      9 mother_phone
-    Rows with unparsable birthdays are skipped. A header row is automatically skipped if
-    the birthday column cannot be parsed.
+    Reads the consolidated CSV (header-based) and returns matched birthday rows.
+    Output fields:
+      id, name, app_id, birthday (YYYY-MM-DD), email, phone,
+      father_email, father_phone, mother_email, mother_phone
     """
     matches: list[dict] = []
     if not os.path.exists(CSV_PATH):
         print(f"[read_csv_matches] CSV not found: {CSV_PATH}")
         return matches
 
+    # Try pandas first for robust header handling
     try:
-        with open(CSV_PATH, newline="", encoding="utf-8") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                if not row:
-                    continue
-                # Ensure at least 4 columns (birthday index)
-                if len(row) < 4:
-                    continue
-                raw_bday = row[3]
-                bday_dt = _coerce_birthday(raw_bday)
-                if not bday_dt:
-                    # Probably header or invalid; skip
-                    continue
-                if bday_dt.strftime("%m-%d") != month_day:
-                    continue
-
-                def _safe(i):
-                    return row[i].strip() if len(row) > i and row[i] is not None else ""
-
-                matches.append({
-                    "id": _safe(0),
-                    "name": _safe(1),
-                    "app_id": _safe(2),
-                    "birthday": bday_dt.strftime("%Y-%m-%d"),
-                    "email": _safe(4),
-                    "phone": _normalize_phone(_safe(5)),
-                    "father_email": _safe(6),
-                    "father_phone": _normalize_phone(_safe(7)),
-                    "mother_email": _safe(8),
-                    "mother_phone": _normalize_phone(_safe(9)),
-                })
+        df = pd.read_csv(CSV_PATH, dtype=str, keep_default_na=False)
     except Exception as e:
-        print(f"[read_csv_matches] Error reading CSV: {e}")
+        print(f"[read_csv_matches] Could not load CSV via pandas: {e}")
+        return matches
+
+    if df.empty:
+        return matches
+
+    columns = list(df.columns)
+    header_map = _map_headers(columns)
+    birthday_col = header_map.get("birthday")
+    if not birthday_col:
+        print("[read_csv_matches] No birthday/DOB column detected.")
+        return matches
+
+    for _, row in df.iterrows():
+        raw_bday = str(row.get(birthday_col, "")).strip()
+        bday_dt = _coerce_birthday(raw_bday)
+        if not bday_dt:
+            continue
+        if bday_dt.strftime("%m-%d") != month_day:
+            continue
+
+        def get_field(key: str) -> str:
+            colname = header_map.get(key)
+            if not colname:
+                return ""
+            return str(row.get(colname, "")).strip()
+
+        rec = {
+            "id": get_field("id"),
+            "name": get_field("name"),
+            "app_id": get_field("app_id"),
+            "birthday": bday_dt.strftime("%Y-%m-%d"),
+            "email": get_field("email"),
+            "phone": _normalize_phone_generic(get_field("phone")),
+            "father_email": get_field("father_email"),
+            "father_phone": _normalize_phone_generic(get_field("father_phone")),
+            "mother_email": get_field("mother_email"),
+            "mother_phone": _normalize_phone_generic(get_field("mother_phone")),
+        }
+
+        # Optional heuristic: if one parent phone missing and the other exists, mirror it.
+        if not rec["father_phone"] and rec["mother_phone"]:
+            rec["father_phone"] = rec["mother_phone"]
+        if not rec["mother_phone"] and rec["father_phone"]:
+            rec["mother_phone"] = rec["father_phone"]
+
+        matches.append(rec)
 
     return matches
 
 
-# --- Routes ---
-
+# --------------------------------------------------------------------------------------
+# Routes
+# --------------------------------------------------------------------------------------
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -260,7 +335,6 @@ def send_email():
     if not datas:
         return jsonify({"error": "No input data provided"}), 400
 
-    # Normalize input: always work with a list of dicts
     if isinstance(datas, dict):
         data_list = [datas]
     elif isinstance(datas, list):
@@ -270,7 +344,6 @@ def send_email():
 
     results = []
     for entry in data_list:
-        print(entry)
         recipient = entry.get("recipient")
         if not recipient:
             results.append({"status": 400, "error": "Recipient email required"})
@@ -285,7 +358,6 @@ def send_email():
         mother_email = entry.get("mother_email")
         mother_phone = entry.get("mother_phone")
 
-        # Collect extra contacts
         extra_recipients = []
         if father_email:
             extra_recipients.append(father_email)
@@ -298,21 +370,18 @@ def send_email():
         if mother_phone:
             extra_phones.append(str(mother_phone))
 
-        # Generate AI message
         try:
             message = asyncio.run(text_gen(name))
         except Exception as e:
             results.append({"status": 500, "error": f"AI text generation failed: {e}"})
             continue
 
-        # Build card
         try:
             card_path = create_birthday_card(name, message)
         except Exception as e:
             results.append({"status": 500, "error": f"Card generation failed: {e}"})
             continue
 
-        # Encode image
         try:
             with open(card_path, "rb") as f:
                 encoded_file = base64.b64encode(f.read()).decode()
@@ -329,7 +398,6 @@ def send_email():
 
         all_recipients = [recipient] + extra_recipients
 
-        # Send WhatsApp (best-effort)
         all_phones = [str(recipient_phone)] if recipient_phone else []
         all_phones += extra_phones
         for phone in all_phones:
@@ -361,6 +429,7 @@ def send_email():
 
     return jsonify(results), 200
 
+
 @app.route("/csvdump", methods=["POST"])
 def csvDump():
     """Aggregate all Excel files in xlsDump, extract target sheets, and write consolidated CSV to data folder."""
@@ -389,12 +458,11 @@ def csvDump():
         for sheet_name, df in matching_sheets.items():
             if df.empty:
                 continue
-            # Promote second row to header (original logic)
             if len(df) > 1:
                 df.columns = df.iloc[1]
                 df = df.drop([0, 1])
             df = df.dropna(how="all")
-            # Drop serial number / unnamed columns
+
             drop_cols = []
             for col in list(df.columns):
                 col_str = str(col).strip().lower()
@@ -402,7 +470,7 @@ def csvDump():
                     drop_cols.append(col)
             if drop_cols:
                 df = df.drop(columns=drop_cols)
-            # Normalize DOB
+
             dob_col = [c for c in df.columns if "DOB" in str(c).upper()]
             if dob_col:
                 col = dob_col[0]
@@ -412,7 +480,7 @@ def csvDump():
                     skipped_students.extend(missing_dob["Student Name"].dropna().tolist())
                 df = df[df[col].notna()]
                 df[col] = df[col].dt.strftime("%d-%m-%Y")
-            # Normalize phone columns
+
             phone_cols = ["Parent Whatsapp No.", "Student Whatsapp No."]
             for phone_col in phone_cols:
                 if phone_col in df.columns:
@@ -423,7 +491,7 @@ def csvDump():
                         .str.lstrip("0")
                         .apply(lambda x: "91" + x if x else x)
                     )
-            # Deduplicate by student name
+
             if "Student Name" in df.columns:
                 df = df[~df["Student Name"].isin(seen_students)]
                 seen_students.update(df["Student Name"].dropna().tolist())
@@ -441,7 +509,6 @@ def csvDump():
 
     final_df = pd.concat(all_data, ignore_index=True)
 
-    # Ensure data directory exists
     csv_dir = os.path.dirname(CSV_PATH)
     if csv_dir and not os.path.exists(csv_dir):
         os.makedirs(csv_dir, exist_ok=True)
@@ -456,10 +523,11 @@ def csvDump():
         "rows": len(final_df),
         "skipped_students": skipped_students,
         "skipped_count": len(skipped_students),
-        "csv_path": CSV_PATH,  # absolute/normalized path on server
+        "csv_path": CSV_PATH,
         "download_url": "/download_csv"
     }
     return jsonify(response), 200
+
 
 @app.route("/download_csv", methods=["GET"])
 def download_csv():
@@ -469,8 +537,8 @@ def download_csv():
         return auth_error
     if not os.path.exists(CSV_PATH):
         return jsonify({"error": "CSV not generated yet"}), 404
-    # as_attachment keeps filename consistent
     return send_file(CSV_PATH, as_attachment=True, download_name=os.path.basename(CSV_PATH))
+
 
 @app.route("/delete_all_xls", methods=["POST"])
 def delete_all_xls():
@@ -484,7 +552,6 @@ def delete_all_xls():
 
     deleted = []
     failed = []
-
     try:
         for filename in os.listdir(base_dir):
             if filename.lower().endswith((".xlsx", ".xls")):
@@ -494,7 +561,6 @@ def delete_all_xls():
                     deleted.append(filename)
                 except Exception as e:
                     failed.append({"filename": filename, "error": str(e)})
-
         return jsonify({
             "deleted": deleted,
             "failed": failed,
@@ -504,18 +570,19 @@ def delete_all_xls():
     except Exception as e:
         return jsonify({"error": f"Failed to delete files: {e}"}), 500
 
+
 @app.route("/list_files", methods=["GET"])
 def list_files():
     """List all uploaded Excel files with metadata."""
     auth_error = require_auth()
     if auth_error:
         return auth_error
-    
+
     base_dir = os.path.join(".", "server", "components", "xlsDump")
     if not os.path.exists(base_dir):
         os.makedirs(base_dir, exist_ok=True)
         return jsonify({"files": []}), 200
-    
+
     files = []
     try:
         for filename in os.listdir(base_dir):
@@ -528,48 +595,42 @@ def list_files():
                     "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
                     "size_mb": round(stat.st_size / (1024 * 1024), 2)
                 })
-        
-        # Sort by upload time (newest first)
         files.sort(key=lambda x: x["uploaded_at"], reverse=True)
         return jsonify({"files": files}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to list files: {e}"}), 500
 
+
 @app.route("/upload_excel", methods=["POST"])
 def upload_excel():
-    """Upload and process Excel file."""
+    """Upload and process Excel file (current simple path: overwrite consolidated CSV with last upload)."""
     auth_error = require_auth()
     if auth_error:
         return auth_error
-    
+
     if 'file' not in request.files:
         return jsonify({"error": "No file provided"}), 400
-    
+
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
-    
+
     if not file.filename.lower().endswith(('.xlsx', '.xls')):
         return jsonify({"error": "Only Excel files (.xlsx, .xls) are allowed"}), 400
-    
+
     try:
-        # Create xlsDump directory if it doesn't exist
         base_dir = os.path.join(".", "server", "components", "xlsDump")
         os.makedirs(base_dir, exist_ok=True)
-        
-        # Save the file
+
         filename = file.filename
         file_path = os.path.join(base_dir, filename)
         file.save(file_path)
-        
-        # Process the Excel file and convert to CSV
+
         try:
             df = pd.read_excel(file_path)
-            # Ensure destination directory for CSV exists
             csv_dir = os.path.dirname(CSV_PATH)
             if csv_dir and not os.path.exists(csv_dir):
                 os.makedirs(csv_dir, exist_ok=True)
-            # Save to the main CSV file used by the system (currently overwrites each upload)
             df.to_csv(CSV_PATH, index=False)
             print(f"[upload_excel] Saved processed CSV to {CSV_PATH} with {len(df)} rows")
             return jsonify({
@@ -578,18 +639,16 @@ def upload_excel():
                 "rows_processed": len(df)
             }), 200
         except Exception as e:
-            # Remove the uploaded file if processing fails
             if os.path.exists(file_path):
                 os.remove(file_path)
             print(f"[upload_excel] Processing failed for {filename}: {e}")
             return jsonify({"error": f"Failed to process Excel file: {e}"}), 400
-            
+
     except Exception as e:
         return jsonify({"error": f"Failed to upload file: {e}"}), 500
 
+
 # --- Error Handlers ---
-
-
 @app.errorhandler(404)
 def not_found(_e):
     return jsonify({"error": "Not found"}), 404
