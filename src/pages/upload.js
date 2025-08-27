@@ -532,7 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
       convertBtn.style.opacity = '0.6';
     }
 
-    fetch('http://localhost:8000/convert_to_csv', {
+    fetch('http://localhost:8000/csvdump', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
