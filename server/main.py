@@ -7,7 +7,7 @@ import secrets
 import asyncio
 from datetime import datetime, date
 from typing import Optional
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import (
@@ -363,69 +363,115 @@ def send_email():
 
 @app.route("/csvdump", methods=["POST"])
 def csvDump():
+    """Aggregate all Excel files in xlsDump, extract target sheets, and write consolidated CSV to data folder."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+
     excel_files = glob.glob(os.path.join("./server/components/xlsDump/", "*.xls*"))
     target_keyword = "Student Master"
-    skipped_students = []
-    seen_students = set()
+    skipped_students: list[str] = []
+    seen_students: set[str] = set()
     all_data = []
+
     for file in excel_files:
-        sheets = pd.read_excel(file, sheet_name=None, header=None)
+        try:
+            sheets = pd.read_excel(file, sheet_name=None, header=None)
+        except Exception as e:
+            print(f"[csvDump] Failed reading {file}: {e}")
+            continue
         matching_sheets = {name: df for name, df in sheets.items() if target_keyword in name}
-        
-        if matching_sheets:
-            for sheet_name, df in matching_sheets.items():
-                if df.empty:
-                    continue
+
+        if not matching_sheets:
+            print(f"[csvDump] {file}: no sheet with '{target_keyword}' found")
+            continue
+
+        for sheet_name, df in matching_sheets.items():
+            if df.empty:
+                continue
+            # Promote second row to header (original logic)
+            if len(df) > 1:
                 df.columns = df.iloc[1]
                 df = df.drop([0, 1])
-                df = df.dropna(how="all")
-                for col in df.columns:
-                    col_str = str(col).strip().lower()
-                    if col_str in ["s.no", "sl no", "slno", "sno"] or col_str.startswith("unnamed"):
-                        df = df.drop(columns=[col])
-                        break 
-                dob_col = [c for c in df.columns if "DOB" in str(c).upper()]
-                if dob_col:
-                    col = dob_col[0]
-                    df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
-                    df[col] = df[col].dt.strftime("%d-%m-%Y")
-                    missing_dob = df[df[col].isna()]
-                    if not missing_dob.empty and "Student Name" in df.columns:
-                        skipped_students.extend(missing_dob["Student Name"].dropna().tolist())
-                    df = df[df[col].notna()]
-                phone_cols = [
-                    "Parent Whatsapp No.",
-                    "Student Whatsapp No."
-                ]
-                for phone_col in phone_cols:
-                    if phone_col in df.columns:
-                        df[phone_col] = (
-                            df[phone_col]
-                            .astype(str)
-                            .str.replace(r"\D", "", regex=True)
-                            .str.lstrip("0")
-                            .apply(lambda x: "91" + x if x else x)
-                        )
-                if "Student Name" in df.columns:
-                    df = df[~df["Student Name"].isin(seen_students)]
-                    seen_students.update(df["Student Name"].dropna().tolist())
-                
-                if not df.empty:
-                    all_data.append(df)
-        else:
-            print(f"{file}: no sheet with '{target_keyword}' found")
-    if all_data:
-        final_df = pd.concat(all_data, ignore_index=True)
-        final_df.to_csv("All_StudentMaster.csv", index=False)
-    else:
-        print("\nNo valid data to save")
-        return "No Valid Data"
-    if skipped_students:
-        return skipped_students
-    else:
-        print("\nNo students skipped, all had DOBs!")
-        return "All Students Processed"
-    
+            df = df.dropna(how="all")
+            # Drop serial number / unnamed columns
+            drop_cols = []
+            for col in list(df.columns):
+                col_str = str(col).strip().lower()
+                if col_str in ["s.no", "sl no", "slno", "sno"] or col_str.startswith("unnamed"):
+                    drop_cols.append(col)
+            if drop_cols:
+                df = df.drop(columns=drop_cols)
+            # Normalize DOB
+            dob_col = [c for c in df.columns if "DOB" in str(c).upper()]
+            if dob_col:
+                col = dob_col[0]
+                df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+                missing_dob = df[df[col].isna()]
+                if not missing_dob.empty and "Student Name" in df.columns:
+                    skipped_students.extend(missing_dob["Student Name"].dropna().tolist())
+                df = df[df[col].notna()]
+                df[col] = df[col].dt.strftime("%d-%m-%Y")
+            # Normalize phone columns
+            phone_cols = ["Parent Whatsapp No.", "Student Whatsapp No."]
+            for phone_col in phone_cols:
+                if phone_col in df.columns:
+                    df[phone_col] = (
+                        df[phone_col]
+                        .astype(str)
+                        .str.replace(r"\D", "", regex=True)
+                        .str.lstrip("0")
+                        .apply(lambda x: "91" + x if x else x)
+                    )
+            # Deduplicate by student name
+            if "Student Name" in df.columns:
+                df = df[~df["Student Name"].isin(seen_students)]
+                seen_students.update(df["Student Name"].dropna().tolist())
+            if not df.empty:
+                all_data.append(df)
+
+    if not all_data:
+        return jsonify({
+            "message": "No valid data found in uploaded Excel workbooks",
+            "rows": 0,
+            "skipped_count": 0,
+            "csv_path": None,
+            "download_url": None
+        }), 200
+
+    final_df = pd.concat(all_data, ignore_index=True)
+
+    # Ensure data directory exists
+    csv_dir = os.path.dirname(CSV_PATH)
+    if csv_dir and not os.path.exists(csv_dir):
+        os.makedirs(csv_dir, exist_ok=True)
+
+    try:
+        final_df.to_csv(CSV_PATH, index=False, encoding="utf-8")
+    except Exception as e:
+        return jsonify({"error": f"Failed to write consolidated CSV: {e}"}), 500
+
+    response = {
+        "message": "CSV consolidated successfully",
+        "rows": len(final_df),
+        "skipped_students": skipped_students,
+        "skipped_count": len(skipped_students),
+        "csv_path": CSV_PATH,  # absolute/normalized path on server
+        "download_url": "/download_csv"
+    }
+    return jsonify(response), 200
+
+@app.route("/download_csv", methods=["GET"])
+def download_csv():
+    """Download the consolidated CSV file (auth required)."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+    if not os.path.exists(CSV_PATH):
+        return jsonify({"error": "CSV not generated yet"}), 404
+    # as_attachment keeps filename consistent
+    return send_file(CSV_PATH, as_attachment=True, download_name=os.path.basename(CSV_PATH))
+
 @app.route("/delete_all_xls", methods=["POST"])
 def delete_all_xls():
     auth_error = require_auth()
@@ -519,9 +565,13 @@ def upload_excel():
         # Process the Excel file and convert to CSV
         try:
             df = pd.read_excel(file_path)
-            # Save to the main CSV file used by the system
+            # Ensure destination directory for CSV exists
+            csv_dir = os.path.dirname(CSV_PATH)
+            if csv_dir and not os.path.exists(csv_dir):
+                os.makedirs(csv_dir, exist_ok=True)
+            # Save to the main CSV file used by the system (currently overwrites each upload)
             df.to_csv(CSV_PATH, index=False)
-            
+            print(f"[upload_excel] Saved processed CSV to {CSV_PATH} with {len(df)} rows")
             return jsonify({
                 "message": f"Excel file '{filename}' uploaded and processed successfully",
                 "filename": filename,
@@ -531,6 +581,7 @@ def upload_excel():
             # Remove the uploaded file if processing fails
             if os.path.exists(file_path):
                 os.remove(file_path)
+            print(f"[upload_excel] Processing failed for {filename}: {e}")
             return jsonify({"error": f"Failed to process Excel file: {e}"}), 400
             
     except Exception as e:

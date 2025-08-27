@@ -544,11 +544,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         if (res.ok) {
           console.log('Files converted successfully');
-          alert(`✅ Success! Converted ${data.files_processed || 'all'} Excel files to CSV. Generated ${data.records_count || 'multiple'} records.`);
-          // Optionally download the CSV file if provided
-          if (data.csv_file_url) {
-            window.open(data.csv_file_url, '_blank');
+          let msg = `✅ Success! Consolidated ${data.rows || 0} records.`;
+          if (data.skipped_count) {
+            msg += ` Skipped ${data.skipped_count} (missing DOB).`;
           }
+          alert(msg);
         } else {
           console.error('Conversion failed:', data.error);
           alert('Failed to convert files: ' + (data.error || 'Unknown error'));
@@ -568,6 +568,77 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   };
 
+  // (Re)usable multi-file upload handler (was missing causing uploads to fail)
+  function handleMultipleUpload(files) {
+    if (!hasAuth()) {
+      alert('Login required before uploading.');
+      return;
+    }
+    if (!files || files.length === 0) return;
+
+    // Filter only valid Excel files
+    const excelFiles = files.filter(f => /\.xlsx?$/.test(f.name.toLowerCase()));
+    if (excelFiles.length === 0) {
+      alert('No valid .xls or .xlsx files selected.');
+      return;
+    }
+
+    // Simple inline progress feedback using the loading area if present
+    const loadingEl = document.getElementById('files-loading');
+    if (loadingEl) {
+      loadingEl.style.display = 'flex';
+      loadingEl.innerHTML = '<span style="margin-right:8px">⬆️</span>Uploading ' + excelFiles.length + ' file(s)...';
+    }
+
+    let succeeded = 0;
+    let failed = 0;
+
+    const uploadOne = (file) => {
+      const fd = new FormData();
+      fd.append('file', file, file.name);
+      return fetch('http://localhost:8000/upload_excel', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
+        body: fd
+      })
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then((result) => {
+          if (result.ok) {
+            succeeded++;
+          } else {
+            failed++;
+            console.error('Upload failed for', file.name, result.data && result.data.error);
+          }
+          if (loadingEl) {
+            loadingEl.innerHTML = `<span style="margin-right:8px">⬆️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
+          }
+        })
+        .catch((err) => {
+          failed++;
+          console.error('Network/upload error for', file.name, err);
+          if (loadingEl) {
+            loadingEl.innerHTML = `<span style=\"margin-right:8px\">⚠️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
+          }
+        });
+    };
+
+    Promise.all(excelFiles.map(uploadOne)).then(() => {
+      // Refresh list when all done
+      loadCurrentFiles();
+      if (loadingEl) {
+        if (failed === 0) {
+          loadingEl.innerHTML = '<span style="margin-right:8px">✅</span>All files uploaded successfully';
+          setTimeout(() => { if (loadingEl.style.display !== 'none') loadingEl.style.display = 'none'; }, 1200);
+        } else {
+          loadingEl.innerHTML = `<span style="margin-right:8px">⚠️</span>${succeeded} succeeded, ${failed} failed`;
+        }
+      }
+      if (failed > 0) {
+        alert(`${succeeded} file(s) uploaded successfully, ${failed} failed. Check console for errors.`);
+      }
+    });
+  }
+
   // Theme toggle functionality
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
   const uploadInput = document.getElementById("upload-input");
@@ -579,6 +650,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const files = Array.from(uploadInput.files);
       if (files.length === 0) return;
       handleMultipleUpload(files);
+    });
+  }
+
+  const addFilesBtn = document.getElementById('add-files-btn');
+  const hiddenMainInput = document.getElementById('upload-input');
+  if (addFilesBtn && hiddenMainInput) {
+    addFilesBtn.addEventListener('click', () => {
+      if (!hasAuth()) {
+        alert('Login required to upload files');
+        return;
+      }
+      hiddenMainInput.click();
+    });
+    hiddenMainInput.addEventListener('change', () => {
+      const files = Array.from(hiddenMainInput.files || []);
+      if (files.length) {
+        handleMultipleUpload(files);
+        // reset input so selecting the same file again still triggers change
+        hiddenMainInput.value = '';
+      }
     });
   }
 });
