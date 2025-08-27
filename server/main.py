@@ -447,6 +447,84 @@ def delete_xls():
     except Exception as e:
         return jsonify({"error": f"Failed to delete file: {e}"}), 500
 
+@app.route("/list_files", methods=["GET"])
+def list_files():
+    """List all uploaded Excel files with metadata."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+    
+    base_dir = os.path.join(".", "server", "components", "xlsDump")
+    if not os.path.exists(base_dir):
+        os.makedirs(base_dir, exist_ok=True)
+        return jsonify({"files": []}), 200
+    
+    files = []
+    try:
+        for filename in os.listdir(base_dir):
+            if filename.endswith(('.xlsx', '.xls')):
+                file_path = os.path.join(base_dir, filename)
+                stat = os.stat(file_path)
+                files.append({
+                    "filename": filename,
+                    "size": stat.st_size,
+                    "uploaded_at": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                    "size_mb": round(stat.st_size / (1024 * 1024), 2)
+                })
+        
+        # Sort by upload time (newest first)
+        files.sort(key=lambda x: x["uploaded_at"], reverse=True)
+        return jsonify({"files": files}), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to list files: {e}"}), 500
+
+@app.route("/upload_excel", methods=["POST"])
+def upload_excel():
+    """Upload and process Excel file."""
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+    
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({"error": "Only Excel files (.xlsx, .xls) are allowed"}), 400
+    
+    try:
+        # Create xlsDump directory if it doesn't exist
+        base_dir = os.path.join(".", "server", "components", "xlsDump")
+        os.makedirs(base_dir, exist_ok=True)
+        
+        # Save the file
+        filename = file.filename
+        file_path = os.path.join(base_dir, filename)
+        file.save(file_path)
+        
+        # Process the Excel file and convert to CSV
+        try:
+            df = pd.read_excel(file_path)
+            # Save to the main CSV file used by the system
+            df.to_csv(CSV_PATH, index=False)
+            
+            return jsonify({
+                "message": f"Excel file '{filename}' uploaded and processed successfully",
+                "filename": filename,
+                "rows_processed": len(df)
+            }), 200
+        except Exception as e:
+            # Remove the uploaded file if processing fails
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            return jsonify({"error": f"Failed to process Excel file: {e}"}), 400
+            
+    except Exception as e:
+        return jsonify({"error": f"Failed to upload file: {e}"}), 500
+
 # --- Error Handlers ---
 
 
