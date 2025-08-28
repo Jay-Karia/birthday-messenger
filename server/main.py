@@ -578,7 +578,7 @@ def list_files():
     if auth_error:
         return auth_error
 
-    base_dir = os.path.join(".", "server", "components", "xlsDump")
+    base_dir = os.path.join(".", "components", "xlsDump")
     if not os.path.exists(base_dir):
         os.makedirs(base_dir, exist_ok=True)
         return jsonify({"files": []}), 200
@@ -619,7 +619,7 @@ def upload_excel():
         return jsonify({"error": "Only Excel files (.xlsx, .xls) are allowed"}), 400
 
     try:
-        base_dir = os.path.join(".", "server", "components", "xlsDump")
+        base_dir = os.path.join(".", "components", "xlsDump")
         os.makedirs(base_dir, exist_ok=True)
 
         filename = file.filename
