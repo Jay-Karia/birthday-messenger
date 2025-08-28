@@ -109,33 +109,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     const dark = document.body.classList.contains('dark');
-    const itemBg = dark ? 'linear-gradient(135deg, #23272f 0%, #181a20 100%)' : 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)';
-    const borderColor = dark ? '#374151' : '#e2e8f0';
-    const nameColor = dark ? 'var(--text-primary, #f3f4f6)' : '#1f2937';
-    const metaColor = dark ? 'var(--text-secondary, #9ca3af)' : '#6b7280';
-    const badgeBg = dark ? '#2d3238' : '#f3f4f6';
-    const badgeColor = dark ? '#d1d5db' : '#374151';
-
     listEl.innerHTML = files.map(file => {
       const date = new Date(file.uploaded_at);
       return `
-        <div class="file-item" style="
-          display:flex;align-items:center;justify-content:space-between;
-          padding:20px;margin-bottom:16px;background:${itemBg};
-          border:1px solid ${borderColor};border-radius:12px;
-          box-shadow:0 4px 6px rgba(0,0,0,0.05);transition:all .2s ease;"
-          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.1)'"
-          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.05)'">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-              <span style="font-size:20px">📊</span>
-              <span style="font-weight:600;color:${nameColor};font-size:16px">${file.filename}</span>
-            </div>
-            <div style="font-size:12px;color:${metaColor};margin-left:32px">
-              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;margin-right:8px;">📦 ${file.size_mb} MB</span>
-              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;margin-right:8px;">📅 ${date.toLocaleDateString()}</span>
-              <span style="display:inline-block;padding:2px 8px;background:${badgeBg};color:${badgeColor};border-radius:4px;">🕒 ${date.toLocaleTimeString()}</span>
-            </div>
+        <div class="file-item">
+          <div class="file-item__top">
+            <p class="file-item__name" title="${file.filename}">${file.filename}</p>
+          </div>
+          <div class="file-item__meta">
+            <span class="file-pill">${file.size_mb} MB</span>
+            <span>${date.toLocaleDateString()}</span>
+            <span>${date.toLocaleTimeString()}</span>
           </div>
         </div>`;
     }).join('');
@@ -643,24 +627,35 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const addFilesBtn = document.getElementById('add-files-btn');
+  // Unified input & drop area/browse button
   const hiddenMainInput = document.getElementById('upload-input');
-  if (addFilesBtn && hiddenMainInput) {
-    addFilesBtn.addEventListener('click', () => {
-      if (!hasAuth()) {
-        alert('Login required to upload files');
-        return;
-      }
-      hiddenMainInput.click();
-    });
+  const dropArea = document.getElementById('drop-area');
+  const browseBtn = document.getElementById('browse-btn');
+  if (hiddenMainInput) {
     hiddenMainInput.addEventListener('change', () => {
       const files = Array.from(hiddenMainInput.files || []);
       if (files.length) {
         handleMultipleUpload(files);
-        // reset input so selecting the same file again still triggers change
         hiddenMainInput.value = '';
       }
     });
+  }
+  function triggerSelect() {
+    if (!hasAuth()) {
+      alert('Login required to upload files');
+      return;
+    }
+    hiddenMainInput && hiddenMainInput.click();
+  }
+  if (browseBtn) browseBtn.addEventListener('click', triggerSelect);
+  if (dropArea) {
+    ['click','keydown'].forEach(evt => dropArea.addEventListener(evt, (e) => {
+      if (evt === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+      if (e.type === 'keydown') e.preventDefault();
+      triggerSelect();
+    }));
+    ['dragenter','dragover'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); dropArea.classList.add('dragover');}));
+    ['dragleave','drop'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); if(evt==='drop'){ const files=Array.from(e.dataTransfer.files||[]).filter(f=>/\.xlsx?$/.test(f.name.toLowerCase())); if(files.length) handleMultipleUpload(files);} dropArea.classList.remove('dragover');}));
   }
 
   // Re-render files on theme toggle so inline dynamic colors update

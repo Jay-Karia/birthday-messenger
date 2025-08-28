@@ -163,157 +163,33 @@
     <!-- Hidden file input for Excel upload -->
     <input type="file" id="upload-input" style="display: none;" accept=".xlsx,.xls" multiple />
 
-    <main style="max-width: 800px; margin: 20px auto 40px; padding: 0 20px">
-      <!-- Current Files Section -->
-      <section style="margin-bottom: 32px">
-        <div style="text-align: center; margin-bottom: 20px">
-          <h2
-            style="
-              font-size: 24px;
-              margin: 0 0 8px;
-              font-weight: 600;
-              color: #1f2937;
-            "
-          >
-            Upload Excel Files
-          </h2>
-          <p style="font-size: 14px; line-height: 1.5; opacity: 0.7">
-            Manage your uploaded Excel files. These files are currently being
-            used for birthday data.
-          </p>
+    <main class="upload-main">
+      <section class="files-shell">
+        <header class="files-shell__header">
+          <div class="files-shell__titles">
+            <h2>Excel Data Sources</h2>
+            <p>Upload and manage the Excel workbooks used to generate the consolidated birthday dataset.</p>
+          </div>
+          <div class="files-shell__actions">
+            <div id="file-count" class="badge-pill">0 files</div>
+            <button id="convert-btn" class="btn-quiet success" style="display:none" onclick="convertToCSV()">Convert</button>
+            <button id="delete-all-btn" class="btn-quiet danger" style="display:none" onclick="deleteAllFiles()">Delete All</button>
+          </div>
+        </header>
+        <div class="drop-area" id="drop-area" tabindex="0" aria-label="Upload Excel files by browsing or dragging">
+          <div class="drop-area__inner">
+            <strong>Select or drop .xlsx / .xls files</strong>
+            <span class="hint">Files are stored securely and can be converted to a single CSV</span>
+            <button type="button" class="btn-outline" id="browse-btn">Browse Files</button>
+          </div>
         </div>
-
-        <div
-          id="current-files-container"
-          class="excel-files-container"
-        >
-          <!-- Action buttons header -->
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #1f2937">Uploaded Files</h3>
-            <div style="display: flex; align-items: center; gap: 12px">
-              <div id="file-count" style="
-                background: #374151;
-                color: white;
-                padding: 4px 12px;
-                border-radius: 12px;
-                font-size: 12px;
-                font-weight: 500;
-              ">0 files</div>
-              <button 
-                id="convert-btn"
-                onclick="convertToCSV()"
-                style="
-                  padding: 6px 12px; 
-                  border: 1px solid #059669; 
-                  border-radius: 6px; 
-                  background: white; 
-                  color: #059669; 
-                  cursor: pointer; 
-                  font-size: 12px;
-                  font-weight: 500;
-                  transition: all 0.2s ease;
-                  display: none;
-                  align-items: center;
-                  gap: 4px;
-                "
-                onmouseover="this.style.background='#059669'; this.style.color='white'"
-                onmouseout="this.style.background='white'; this.style.color='#059669'"
-              >
-                🔄 Convert to CSV
-              </button>
-              <button 
-                id="delete-all-btn"
-                onclick="deleteAllFiles()"
-                style="
-                  padding: 6px 12px; 
-                  border: 1px solid #dc2626; 
-                  border-radius: 6px; 
-                  background: white; 
-                  color: #dc2626; 
-                  cursor: pointer; 
-                  font-size: 12px;
-                  font-weight: 500;
-                  transition: all 0.2s ease;
-                  display: none;
-                  align-items: center;
-                  gap: 4px;
-                "
-                onmouseover="this.style.background='#dc2626'; this.style.color='white'"
-                onmouseout="this.style.background='white'; this.style.color='#dc2626'"
-              >
-                🗑️ Delete All
-              </button>
-            </div>
+        <div class="list-wrapper">
+          <div id="files-loading" class="loading-row">Loading files...</div>
+          <div id="no-files" class="empty-row" style="display:none">
+            <p class="empty-title">No files uploaded</p>
+            <p class="empty-sub">Use the button above or drag-and-drop to begin.</p>
           </div>
-
-          <div
-            id="files-loading"
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              min-height: 80px;
-              color: #6b7280;
-            "
-          >
-            <span style="margin-right: 8px">⏳</span> Loading files...
-          </div>
-
-          <div id="files-list" style="display: none">
-            <!-- Files will be populated here by JavaScript -->
-          </div>
-
-          <div
-            id="no-files"
-            style="display: none; padding: 20px; color: #6b7280"
-          >
-            <div style="text-align: center; margin-bottom: 24px">
-              <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">
-                📂
-              </div>
-              <p style="margin: 0; font-size: 16px">No files uploaded yet</p>
-              <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.7">
-                Upload Excel files for each academic year
-              </p>
-            </div>
-
-            <!-- Quick upload slots for each year -->
-            <div
-              style="
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-                gap: 16px;
-                margin-top: 20px;
-              "
-            >
-                <div
-                class="upload-slot"
-                style="
-                  border: 2px dashed #d1d5db;
-                  border-radius: 8px;
-                  padding: 20px;
-                  text-align: center;
-                  transition: all 0.3s ease;
-                  cursor: pointer;
-                  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-                "
-                onclick="triggerFileUpload('first')"
-                onmouseover="this.style.borderColor='#6b7280'; this.style.background='#f3f4f6'"
-                onmouseout="this.style.borderColor='#d1d5db'; this.style.background='linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)'"
-                >
-                <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">
-                  Click to upload
-                </p>
-                <input
-                  type="file"
-                  id="quick-first-input"
-                  style="display: none"
-                  accept=".xlsx,.xls"
-                  onchange="handleQuickUpload('first', this)"
-                />
-                </div>
-            </div>
-          </div>
+          <div id="files-list" class="files-list" style="display:none"></div>
         </div>
       </section>
     </main>
@@ -330,74 +206,36 @@
 </html>
 
 <style>
-  /* Section headers */
-      main h2 {
-        color: var(--text-primary) !important;
-      }
-    
-      /* Dark theme overrides for inline styles */
-      body.dark #current-files-container {
-        background: var(--bg-secondary) !important;
-        border-color: var(--border-color) !important;
-      }
-      body.dark #files-loading,
-      body.dark #no-files,
-      body.dark main {
-        background: var(--bg-primary) !important;
-        color: var(--text-secondary) !important;
-      }
-      body.dark button {
-        background: var(--button-bg) !important;
-        color: var(--text-primary) !important;
-        border-color: var(--border-color) !important;
-      }
-      body.dark button:hover {
-        background: var(--button-hover-bg) !important;
-      }
-      body.dark #convert-btn {
-        border-color: var(--success-color) !important;
-        color: var(--success-color) !important;
-      }
-      body.dark #convert-btn:hover {
-        background: var(--success-color) !important;
-        color: #fff !important;
-      }
-      body.dark #delete-all-btn {
-        border-color: var(--danger-color) !important;
-        color: var(--danger-color) !important;
-      }
-      body.dark #delete-all-btn:hover {
-        background: var(--danger-color) !important;
-        color: #fff !important;
-      }
-      body.dark .upload-slot {
-        background: var(--bg-secondary) !important;
-        border-color: var(--border-dashed) !important;
-      }
-      body.dark .upload-slot:hover {
-        background: var(--button-hover-bg) !important;
-        border-color: var(--text-secondary) !important;
-      }
-      body.dark .file-item {
-        background: var(--bg-secondary) !important;
-        border-color: var(--border-color) !important;
-      }
-      body.dark .file-item:hover {
-        box-shadow: 0 8px 15px var(--shadow) !important;
-      }
-</style>
-<style>
-  .excel-files-container {
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
-    min-height: 120px;
-    position: relative;
-    transition: background 0.2s, border-color 0.2s;
-  }
-  body.dark .excel-files-container {
-    background: linear-gradient(135deg, #23272f 0%, #181a20 100%) !important;
-    border: 1px solid #374151 !important;
-  }
+  /* New professional minimal styles */
+  .upload-main {max-width: 960px; margin: 32px auto 64px; padding: 0 24px;}
+  .files-shell {background: var(--bg-secondary, #ffffff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 16px; padding: 28px 30px 36px; box-shadow: 0 4px 14px -2px rgba(0,0,0,0.08); transition: background .25s, border-color .25s, box-shadow .25s;}
+  body.dark .files-shell {background: #1c2228; border-color: #2d3842; box-shadow: 0 4px 20px -2px rgba(0,0,0,0.55);} 
+  .files-shell__header {display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start; justify-content:space-between; margin-bottom:24px;}
+  .files-shell__titles {max-width:600px;}
+  .files-shell__titles h2 {margin:0 0 6px; font-size:24px; font-weight:600; letter-spacing:.4px; color:var(--text-primary);} 
+  .files-shell__titles p {margin:0; font-size:14px; line-height:1.55; color:var(--text-secondary);} 
+  .files-shell__actions {display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+  .badge-pill {background:#eef2f5; color:#374151; padding:6px 14px; font-size:12px; font-weight:500; border-radius:999px; border:1px solid #d1d9e0;}
+  body.dark .badge-pill {background:#25303a; color:var(--text-secondary,#b3bcc5); border-color:#2f3c46;}
+  .btn-quiet, .btn-primary, .btn-outline {font:inherit; cursor:pointer; border-radius:8px; padding:8px 16px; font-size:13px; font-weight:500; line-height:1.1; display:inline-flex; align-items:center; gap:8px; border:1px solid transparent; background:transparent; color:var(--text-primary); transition:background .18s, color .18s, border-color .18s, box-shadow .18s;}
+  .btn-primary {background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 2px 6px rgba(37,99,235,0.3);} .btn-primary:hover {background:#1d56c7; border-color:#1d56c7;}
+  .btn-outline {border-color:#cfd6dc; background:#fff;} .btn-outline:hover {background:#f5f7f9;} body.dark .btn-outline {background:#232b32; border-color:#394550;} body.dark .btn-outline:hover {background:#2b353d;}
+  .btn-quiet.success {color:#059669; border-color:#059669; background:#fff;} .btn-quiet.success:hover {background:#059669; color:#fff;} body.dark .btn-quiet.success {background:#1e2a24;} body.dark .btn-quiet.success:hover {background:#059669;}
+  .btn-quiet.danger {color:#dc2626; border-color:#dc2626; background:#fff;} .btn-quiet.danger:hover {background:#dc2626; color:#fff;} body.dark .btn-quiet.danger {background:#2a1e1e;} body.dark .btn-quiet.danger:hover {background:#dc2626;}
+  .drop-area {border:2px dashed var(--border-color,#d5dbe0); border-radius:14px; padding:40px 28px; text-align:center; background:linear-gradient(155deg,#f8fafc 0%,#ffffff 70%); position:relative; transition:border-color .25s, background .35s;} 
+  .drop-area:hover {border-color:#9aa4ae;} .drop-area strong {display:block; font-weight:600; font-size:15px; margin-bottom:8px; color:var(--text-primary);} .drop-area .hint {display:block; font-size:12px; margin-bottom:18px; color:var(--text-secondary);}
+  body.dark .drop-area {background:linear-gradient(155deg,#232b32 0%,#1d2328 70%); border-color:#33414c;} body.dark .drop-area:hover {border-color:#556370;}
+  .drop-area:focus {outline:2px solid #2563eb; outline-offset:3px;}
+  .list-wrapper {margin-top:30px; display:flex; flex-direction:column; gap:12px;}
+  .loading-row, .empty-row {padding:40px 12px; text-align:center; font-size:14px; color:var(--text-secondary);} .empty-title {margin:0 0 4px; font-weight:600; font-size:15px; color:var(--text-primary);} .empty-sub {margin:0; font-size:13px; opacity:.75;}
+  .files-list {display:flex; flex-direction:column; gap:8px;}
+  /* Re-theme dynamically created file-item (from JS) */
+  .file-item {background:var(--bg-primary,#fff); border:1px solid var(--border-color,#e2e8f0); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px; box-shadow:0 2px 4px rgba(0,0,0,0.04); transition:box-shadow .25s, border-color .25s, background .25s; margin:4px 0;}
+  .file-item:hover {box-shadow:0 6px 14px -2px rgba(0,0,0,0.12);} body.dark .file-item {background:#20272d; border-color:#2e3942; box-shadow:0 2px 10px -2px rgba(0,0,0,0.5);} body.dark .file-item:hover {box-shadow:0 6px 18px -2px rgba(0,0,0,0.6);} 
+  .file-item__top {display:flex; justify-content:space-between; align-items:center; gap:16px;}
+  .file-item__name {font-size:14.5px; font-weight:600; color:var(--text-primary); margin:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .file-item__meta {font-size:11.5px; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:10px; margin-left:2px;}
+  .file-pill {background:#f1f5f9; color:#475569; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:500;} body.dark .file-pill {background:#2b333b; color:#b7c0c7;}
+  /* Dark theme adjustments for outer areas */
+  body.dark .upload-main {color:var(--text-secondary);} 
 </style>
