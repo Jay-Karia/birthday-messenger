@@ -400,13 +400,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (pwError) pwError.textContent = data.error || "Update failed";
           return;
         }
-        // On success, force logout so user reauthenticates with new password
-        alert("Password updated. Please login again.");
-        closePwModal();
-        clearToken();
-        clearAuthCache();
-        if (mainContainer) mainContainer.style.display = "none";
-        if (authContainer) authContainer.style.display = "flex";
+  // Success: keep user logged in (tokens remain valid)
+  alert("Password updated successfully.");
+  closePwModal();
       } catch (err) {
         console.error("Password change error", err);
         if (pwError) pwError.textContent = "Network error";
