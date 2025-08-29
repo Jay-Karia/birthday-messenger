@@ -1,7 +1,10 @@
+dotenv
 flask
+flask-cors
 sendgrid
 pillow
-dotenv
+python-dotenv
 requests
 groq
 openpyxl
+pandas
