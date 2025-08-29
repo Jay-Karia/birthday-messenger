@@ -207,7 +207,51 @@ body.dark .results-table td small {
   color: #b8b8b8; /* lighten small text */
 }
 
-/* Password Change Modal */
+/* Password Change Modal (monotone gray theme) */
+:root {
+  --pw-bg: #f4f4f4;
+  --pw-text: #222;
+  --pw-border: #d0d0d0;
+  --pw-input-bg: #e9e9e9;
+  --pw-focus: #888;
+  --pw-shadow: 0 12px 32px -8px rgba(0,0,0,0.25);
+  --pw-error: #555;
+
+  /* Button vars (light) */
+  --pw-btn-bg: #d9d9d9;
+  --pw-btn-text: #222;
+  --pw-btn-border: #c4c4c4;
+  --pw-btn-hover: #d1d1d1;
+  --pw-btn-active: #c8c8c8;
+  --pw-btn-primary-bg: #595959;
+  --pw-btn-primary-text: #fff;
+  --pw-btn-primary-hover: #4d4d4d;
+  --pw-btn-primary-active: #444;
+  --pw-btn-focus-ring: 0 0 0 3px rgba(0,0,0,0.25);
+  --pw-btn-disabled-opacity: 0.55;
+}
+body.dark {
+  --pw-bg: #2e2e2e;
+  --pw-text: #dedede;
+  --pw-border: #555;
+  --pw-input-bg: #3a3a3a;
+  --pw-focus: #777;
+  --pw-shadow: 0 12px 32px -8px rgba(0,0,0,0.5);
+  --pw-error: #888;
+
+  /* Button vars (dark) */
+  --pw-btn-bg: #3a3a3a;
+  --pw-btn-text: #e2e2e2;
+  --pw-btn-border: #555;
+  --pw-btn-hover: #444;
+  --pw-btn-active: #4d4d4d;
+  --pw-btn-primary-bg: #808080;
+  --pw-btn-primary-text: #fff;
+  --pw-btn-primary-hover: #8d8d8d;
+  --pw-btn-primary-active: #9a9a9a;
+  --pw-btn-focus-ring: 0 0 0 3px rgba(255,255,255,0.18);
+}
+
 .pw-modal {
   position: fixed;
   inset: 0;
@@ -219,29 +263,162 @@ body.dark .results-table td small {
   padding: 24px;
 }
 .pw-modal__dialog {
-  background: #fff;
-  color: #111;
+  background: var(--pw-bg);
+  color: var(--pw-text);
   width: 100%;
   max-width: 380px;
   padding: 28px 30px 30px;
   border-radius: 16px;
-  box-shadow: 0 12px 40px -8px rgba(0,0,0,0.3);
+  box-shadow: var(--pw-shadow);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 18px;
   animation: pwFade 0.28s ease;
+  border: 1px solid var(--pw-border);
 }
 @keyframes pwFade { from { transform: translateY(12px); opacity:0;} to { transform: translateY(0); opacity:1;} }
-body.dark .pw-modal__dialog { background:#1f2428; color:#e5e9ec; }
+
 .pw-modal__dialog h3 { margin:0 0 4px; font-size:20px; font-weight:600; }
+
 .pw-field { display:flex; flex-direction:column; gap:6px; font-size:13px; }
 .pw-field span { font-weight:500; }
-.pw-field input { padding:10px 12px; font-size:14px; border:1px solid #cfd6dc; border-radius:8px; background:#fff; }
-body.dark .pw-field input { background:#2b3237; border-color:#3a464f; color:#e5e9ec; }
-.pw-field input:focus { outline:2px solid #2563eb; outline-offset:1px; }
-.pw-modal__actions { display:flex; justify-content:flex-end; gap:12px; margin-top:4px; }
-.pw-error { min-height:18px; font-size:12px; color:#dc2626; font-weight:500; }
-body.dark .pw-error { color:#f87171; }
+.pw-field input {
+  padding:10px 12px;
+  font-size:14px;
+  border:1px solid var(--pw-border);
+  border-radius:8px;
+  background: var(--pw-input-bg);
+  color: var(--pw-text);
+}
+.pw-field input:focus {
+  outline:2px solid var(--pw-focus);
+  outline-offset:1px;
+}
+
+.pw-modal__actions { display:flex; justify-content:flex-end; gap:12px; margin-top:4px; flex-wrap:wrap; }
+
+/* Themed buttons (namespaced) */
+.pw-btn {
+  --_bg: var(--pw-btn-bg);
+  --_color: var(--pw-btn-text);
+  --_border: var(--pw-btn-border);
+  font: 500 14px/1.1 system-ui, "Segoe UI", Arial, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--_border);
+  background: var(--_bg);
+  color: var(--_color);
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  user-select: none;
+  transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
+  min-height: 40px;
+}
+.pw-btn:hover { background: var(--pw-btn-hover); }
+.pw-btn:active { background: var(--pw-btn-active); }
+.pw-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--pw-btn-focus-ring);
+}
+.pw-btn--primary {
+  --_bg: var(--pw-btn-primary-bg);
+  --_color: var(--pw-btn-primary-text);
+  --_border: transparent;
+}
+.pw-btn--primary:hover { background: var(--pw-btn-primary-hover); }
+.pw-btn--primary:active { background: var(--pw-btn-primary-active); }
+.pw-btn--ghost {
+  --_bg: transparent;
+  --_border: var(--pw-btn-border);
+}
+.pw-btn--ghost:hover {
+  background: rgba(128,128,128,0.12);
+}
+body.dark .pw-btn--ghost:hover {
+  background: rgba(255,255,255,0.07);
+}
+.pw-btn--danger {
+  --_bg: #707070;
+  --_color: #fff;
+  --_border: #707070;
+}
+.pw-btn--danger:hover { background:#656565; }
+.pw-btn--danger:active { background:#5b5b5b; }
+body.dark .pw-btn--danger {
+  --_bg:#6a6a6a;
+  --_border:#6a6a6a;
+}
+body.dark .pw-btn--danger:hover { background:#747474; }
+body.dark .pw-btn--danger:active { background:#7e7e7e; }
+
+.pw-btn[disabled],
+.pw-btn[aria-disabled="true"] {
+  opacity: var(--pw-btn-disabled-opacity);
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+}
+
+.pw-btn__spinner {
+  width:16px;
+  height:16px;
+  border:2px solid currentColor;
+  border-right-color: transparent;
+  border-radius:50%;
+  animation: pwSpin 0.7s linear infinite;
+}
+@keyframes pwSpin { to { transform: rotate(360deg); } }
+.pw-btn.loading { pointer-events: none; }
+.pw-btn.loading .pw-btn__label { opacity:0.55; }
+
+.pw-error {
+  min-height:18px;
+  font-size:12px;
+  color: var(--pw-error);
+  font-weight:500;
+}
+
 .pw-modal.closing .pw-modal__dialog { animation: pwOut 0.24s ease forwards; }
 @keyframes pwOut { to { transform: translateY(8px); opacity:0; } }
+
+/* Modal-specific button color overrides */
+.pw-modal .btn-primary {
+  background: #217346; /* Excel green */
+  border-color: #217346;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(33,115,70,0.35);
+}
+.pw-modal .btn-primary:hover {
+  background: #1b5d38;
+  border-color: #1b5d38;
+}
+.pw-modal .btn-outline {
+  background: #f5f7f9;
+  border-color: #c9d2d8;
+  color: #23302a;
+}
+.pw-modal .btn-outline:hover {
+  background: #e8edf0;
+}
+body.dark .pw-modal .btn-primary {
+  background: #2fa36a;
+  border-color: #2fa36a;
+  box-shadow: 0 2px 10px -2px rgba(0,0,0,0.6);
+}
+body.dark .pw-modal .btn-primary:hover {
+  background: #278b5a;
+  border-color: #278b5a;
+}
+body.dark .pw-modal .btn-outline {
+  background: #2b3337;
+  border-color: #3a464f;
+  color: #e2e8ec;
+}
+body.dark .pw-modal .btn-outline:hover {
+  background: #354045;
+}

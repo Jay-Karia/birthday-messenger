@@ -1,5 +1,4 @@
 // TODO: fix logout bug after password change
-// TODO: update change password pop up theme
 
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const path = require("node:path");
