@@ -1,7 +1,11 @@
 {
   "name": "birthday-messenger",
   "productName": "birthday-messenger",
-  "version": "0.0.2",
+<<<<<<< HEAD
+  "version": "0.0.1",
+=======
+  "version": "0.0.3",
+>>>>>>> d722933ce697f4157113e2da39ea2f9b9c577ef5
   "description": "Send Watsapp messages and emails on birthdays.",
   "main": "src/index.js",
   "scripts": {
