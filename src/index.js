@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const path = require("node:path");
-require('update-electron-app')()
 
 if (require("electron-squirrel-startup")) {
   app.quit();
