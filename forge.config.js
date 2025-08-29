@@ -45,4 +45,17 @@ module.exports = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  publishers: [
+    {
+      name: "@electron-forge/publisher-github",
+      config: {
+        repository: {
+          owner: "Jay-Karia",
+          name: "birthday-messenger",
+        },
+        prerelease: false,
+        draft: true,
+      },
+    },
+  ],
 };
