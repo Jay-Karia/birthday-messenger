@@ -1,2 +1,3 @@
 sendgrid.env
 components/xlsDump
+auth_state.json
