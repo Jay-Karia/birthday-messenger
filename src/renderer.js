@@ -125,12 +125,22 @@ function renderResultsList(container, title, people) {
         if (phone) return `<small>${escapeHtml(phone)}</small>`;
         return "–";
       };
+      // Extract birth year from record. Backend sends 'birthday' in YYYY-MM-DD. Fallback to 'dob'.
+      let year = "";
+      const dobSource = p.birthday || p.dob || p.DOB || p.date_of_birth;
+      if (dobSource) {
+        const s = String(dobSource).trim();
+        let m = s.match(/^(\d{4})[-/]/); // leading year pattern
+        if (!m) m = s.match(/(\d{4})$/); // trailing year
+        if (m) year = m[1];
+      }
       return `<tr>
         <td>${safe(p.name)}</td>
         <td>${safe(p.email)}</td>
         <td>${safe(p.phone)}</td>
         <td>${joinPair(p.father_email, p.father_phone)}</td>
         <td>${joinPair(p.mother_email, p.mother_phone)}</td>
+        <td>${year ? safe(year) : "–"}</td>
       </tr>`;
     })
     .join("");
@@ -146,6 +156,7 @@ function renderResultsList(container, title, people) {
             <th scope="col">Phone</th>
             <th scope="col">Father</th>
             <th scope="col">Mother</th>
+            <th scope="col">Year</th>
           </tr>
         </thead>
         <tbody>
