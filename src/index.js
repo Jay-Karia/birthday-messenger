@@ -1,5 +1,3 @@
-// TODO: fix logout bug after password change
-
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const path = require("node:path");
 
