@@ -206,3 +206,42 @@ body.dark .results-table tbody tr:hover {
 body.dark .results-table td small {
   color: #b8b8b8; /* lighten small text */
 }
+
+/* Password Change Modal */
+.pw-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.pw-modal__dialog {
+  background: #fff;
+  color: #111;
+  width: 100%;
+  max-width: 380px;
+  padding: 28px 30px 30px;
+  border-radius: 16px;
+  box-shadow: 0 12px 40px -8px rgba(0,0,0,0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: pwFade 0.28s ease;
+}
+@keyframes pwFade { from { transform: translateY(12px); opacity:0;} to { transform: translateY(0); opacity:1;} }
+body.dark .pw-modal__dialog { background:#1f2428; color:#e5e9ec; }
+.pw-modal__dialog h3 { margin:0 0 4px; font-size:20px; font-weight:600; }
+.pw-field { display:flex; flex-direction:column; gap:6px; font-size:13px; }
+.pw-field span { font-weight:500; }
+.pw-field input { padding:10px 12px; font-size:14px; border:1px solid #cfd6dc; border-radius:8px; background:#fff; }
+body.dark .pw-field input { background:#2b3237; border-color:#3a464f; color:#e5e9ec; }
+.pw-field input:focus { outline:2px solid #2563eb; outline-offset:1px; }
+.pw-modal__actions { display:flex; justify-content:flex-end; gap:12px; margin-top:4px; }
+.pw-error { min-height:18px; font-size:12px; color:#dc2626; font-weight:500; }
+body.dark .pw-error { color:#f87171; }
+.pw-modal.closing .pw-modal__dialog { animation: pwOut 0.24s ease forwards; }
+@keyframes pwOut { to { transform: translateY(8px); opacity:0; } }

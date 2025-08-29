@@ -229,3 +229,48 @@ body.dark #clear-results-btn:disabled {
 #clear-results-btn:hover .icon {
   opacity: 1;
 }
+
+/* Lock / Unlock button */
+#lock-btn {
+  position: absolute;
+  top: 16px;
+  right: 160px; /* adjust as needed so it sits left of upload/home/theme buttons */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity .2s, transform .15s, color .25s;
+}
+
+#lock-btn:hover { opacity: 0.85; }
+#lock-btn:active { transform: translateY(1px); }
+#lock-btn:focus-visible {
+  outline: 2px solid #888;
+  outline-offset: 2px;
+}
+body.dark #lock-btn:focus-visible { outline-color: #ccc; }
+
+/* State coloring (optional) */
+#lock-btn.locked {
+  color: #c0392b;
+}
+body.dark #lock-btn.locked {
+  color: #ff6e57;
+}
+#lock-btn.unlocked {
+  color: #1f7c42;
+}
+body.dark #lock-btn.unlocked {
+  color: #38c172;
+}
+
+#lock-btn[disabled],
+#lock-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: .5;
+  transform: none;
+}

@@ -223,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const passInput = document.getElementById("pass-input");
   const loginError = document.getElementById("login-error");
   const logoutBtn = document.getElementById("logout-btn");
+  const lockBtn = document.getElementById("lock-btn");
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
   const uploadBtn = document.getElementById("upload-btn");
   const uploadInput = document.getElementById("upload-input");
@@ -250,6 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sendBtn) sendBtn.style.display = "none";
   if (clearBtn) clearBtn.style.display = "none";
   if (uploadBtn) uploadBtn.style.display = "none"; // hide upload until auth
+  if (lockBtn) lockBtn.style.display = "none"; // hide change-password until auth
 
   if (resultsContainer) {
     const observer = new MutationObserver(updateActionButtonsVisibility);
@@ -260,9 +262,11 @@ document.addEventListener("DOMContentLoaded", () => {
     authContainer.style.display = "none";
     mainContainer.style.display = "";
     if (uploadBtn) uploadBtn.style.display = "";
+    if (lockBtn) lockBtn.style.display = "";
   } else if (isAuthCached() && getToken()) {
     // For pages without mainContainer (e.g., upload_excel.html)
     if (uploadBtn) uploadBtn.style.display = "";
+    if (lockBtn) lockBtn.style.display = "";
   }
 
   // ---------- Login ----------
@@ -283,9 +287,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.ok) {
           if (data.token) setToken(data.token);
           setAuthCache();
-          if (authContainer) authContainer.style.display = "none";
-          if (mainContainer) mainContainer.style.display = "";
-          if (uploadBtn) uploadBtn.style.display = "";
+    if (authContainer) authContainer.style.display = "none";
+    if (mainContainer) mainContainer.style.display = "";
+    if (uploadBtn) uploadBtn.style.display = "";
+    if (lockBtn) lockBtn.style.display = "";
         } else {
           loginError.textContent = data.error || "Login failed";
           loginError.style.display = "block";
@@ -324,13 +329,89 @@ document.addEventListener("DOMContentLoaded", () => {
       if (passInput) passInput.value = "";
       if (resultsContainer) resultsContainer.innerHTML = "";
       updateActionButtonsVisibility();
-      if (uploadBtn) uploadBtn.style.display = "none";
+  if (uploadBtn) uploadBtn.style.display = "none";
+  if (lockBtn) lockBtn.style.display = "none";
     });
   }
 
   // ---------- Theme Toggle ----------
   if (toggleDarkModeBtn) {
     toggleDarkModeBtn.addEventListener("click", toggleThemeElectronBridge);
+  }
+
+  // ---------- Change Password Modal ----------
+  const pwModal = document.getElementById("pw-modal");
+  const pwForm = document.getElementById("pw-form");
+  const pwOld = document.getElementById("pw-old");
+  const pwNew = document.getElementById("pw-new");
+  const pwError = document.getElementById("pw-error");
+  const pwCancel = document.getElementById("pw-cancel");
+
+  function openPwModal() {
+    if (!pwModal) return;
+    pwModal.style.display = "flex";
+    setTimeout(() => pwOld && pwOld.focus(), 30);
+  }
+  function closePwModal() {
+    if (!pwModal) return;
+    pwModal.classList.add("closing");
+    setTimeout(() => {
+      pwModal.style.display = "none";
+      pwModal.classList.remove("closing");
+      if (pwForm) pwForm.reset();
+      if (pwError) pwError.textContent = "";
+    }, 210);
+  }
+  if (lockBtn) {
+    lockBtn.addEventListener("click", () => {
+      if (!isAuthCached() || !getToken()) {
+        alert("Login required to change password");
+        return;
+      }
+      openPwModal();
+    });
+  }
+  if (pwCancel) pwCancel.addEventListener("click", closePwModal);
+  if (pwModal) {
+    pwModal.addEventListener("click", (e) => {
+      if (e.target === pwModal) closePwModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && pwModal.style.display === "flex") closePwModal();
+    });
+  }
+  if (pwForm) {
+    pwForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!pwOld || !pwNew) return;
+      const old_password = pwOld.value;
+      const new_password = pwNew.value;
+      if (pwError) { pwError.textContent = ""; }
+      const token = getToken();
+      if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
+      try {
+        const res = await fetch(`${API_URL}/change_password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+          body: JSON.stringify({ old_password, new_password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (pwError) pwError.textContent = data.error || "Update failed";
+          return;
+        }
+        // On success, force logout so user reauthenticates with new password
+        alert("Password updated. Please login again.");
+        closePwModal();
+        clearToken();
+        clearAuthCache();
+        if (mainContainer) mainContainer.style.display = "none";
+        if (authContainer) authContainer.style.display = "flex";
+      } catch (err) {
+        console.error("Password change error", err);
+        if (pwError) pwError.textContent = "Network error";
+      }
+    });
   }
 
   // ---------- Upload (placeholder) ----------

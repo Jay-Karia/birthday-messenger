@@ -5,6 +5,7 @@ import csv
 import base64
 import secrets
 import asyncio
+import json
 from datetime import datetime, date
 from typing import Optional
 from flask import Flask, request, jsonify, send_file
@@ -37,6 +38,29 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 ACTIVE_TOKENS: set[str] = set()
 AUTH_USER = os.getenv("AUTH_USER")
 AUTH_PASS = os.getenv("AUTH_PASS")
+# Mutable current password (can be changed at runtime)
+AUTH_STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth_state.json")
+
+# Load persisted password override if present
+if os.path.exists(AUTH_STATE_PATH):
+    try:
+        with open(AUTH_STATE_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict) and data.get("password"):
+            AUTH_PASS = data["password"]
+    except Exception:
+        pass
+
+# Working password used for auth comparisons
+CURRENT_AUTH_PASS = AUTH_PASS
+
+def _persist_password(new_pass: str):
+    try:
+        with open(AUTH_STATE_PATH, "w", encoding="utf-8") as f:
+            json.dump({"password": new_pass}, f)
+    except Exception:
+        # Non-fatal; log or ignore in minimal implementation
+        print("[WARN] Failed to persist new password")
 
 # --- SendGrid / paths ---
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
@@ -283,16 +307,46 @@ def health():
 
 @app.route("/login", methods=["POST"])
 def login():
+    global CURRENT_AUTH_PASS
     data = request.json or {}
     user = data.get("user")
     password = data.get("password")
 
-    if user == AUTH_USER and password == AUTH_PASS:
+    if user == AUTH_USER and password == CURRENT_AUTH_PASS:
         token = secrets.token_urlsafe(32)
         ACTIVE_TOKENS.add(token)
         return jsonify({"message": "Login successful", "token": token}), 200
 
     return jsonify({"error": "Invalid credentials"}), 401
+
+
+@app.route("/change_password", methods=["POST"])
+def change_password():
+    """Change the authentication password.
+    Requires a valid bearer token AND the correct old_password in body.
+    Body: { "old_password": str, "new_password": str }
+    """
+    global CURRENT_AUTH_PASS
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
+
+    data = request.json or {}
+    old_pw = data.get("old_password")
+    new_pw = data.get("new_password")
+
+    if not old_pw or not new_pw:
+        return jsonify({"error": "old_password and new_password required"}), 400
+    if old_pw != CURRENT_AUTH_PASS:
+        return jsonify({"error": "Old password incorrect"}), 403
+    if len(new_pw) < 4:
+        return jsonify({"error": "New password must be at least 4 characters"}), 400
+    if new_pw == CURRENT_AUTH_PASS:
+        return jsonify({"error": "New password must be different"}), 400
+
+    CURRENT_AUTH_PASS = new_pw
+    _persist_password(new_pw)
+    return jsonify({"message": "Password updated"}), 200
 
 
 @app.route("/logout", methods=["POST"])
