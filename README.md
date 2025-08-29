@@ -5,7 +5,7 @@ Cross‑platform desktop app to:
 - Look up students with birthdays on a selected date (year‑agnostic filtering)
 - Generate a personalized AI birthday message
 - Create a custom birthday card image
-- Send emails (via SendGrid) and WhatsApp image messages (Meta Graph API)
+- Send emails
 - Include father/mother contact details automatically if present
 
 ---
@@ -17,7 +17,6 @@ Cross‑platform desktop app to:
 - Dark / Light theme toggle
 - Excel-based data source with parent contact info
 - SendGrid email sending with card PNG attachment
-- WhatsApp media message sending (optional; needs Graph credentials)
 - AI-generated birthday text (Groq API)
 - Parent (father/mother) emails + phones auto-included in sends
 
@@ -38,6 +37,7 @@ WHATSAPP_PHONE_NUMBER_ID
 AUTH_USER
 APP_SECRET
 CERTIFICATE_PASSWORD
+GITHUB_TOKEN # (for publishing on github)
 ```
 
 ---
