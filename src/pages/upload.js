@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    fetch('http://localhost:8000/list_files', {
+    fetch(`https://birthday-messenger.onrender.com/list_files`, {
       method: 'GET',
       headers: {
         'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
@@ -158,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function deleteFileInternal(filename, callback) {
-    fetch('http://localhost:8000/delete_xls', {
+    fetch(`https://birthday-messenger.onrender.com/delete_xls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const fd = new FormData();
     fd.append('file', file, originalFilename); // Use original filename
     
-    fetch('http://localhost:8000/upload_excel', {
+    fetch(`https://birthday-messenger.onrender.com/upload_excel`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
     
-    fetch('http://localhost:8000/upload_excel', {
+    fetch(`https://birthday-messenger.onrender.com/upload_excel`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
@@ -354,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectBtn.disabled = true;
       selectBtn.style.opacity = "0.6";
 
-      fetch("http://localhost:8000/upload_excel", {
+      fetch(`https://birthday-messenger.onrender.com/upload_excel`, {
         method: "POST",
         headers: {
           Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -457,7 +457,7 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteAllBtn.style.opacity = '0.6';
     }
 
-    fetch('http://localhost:8000/delete_all_xls', {
+    fetch(`https://birthday-messenger.onrender.com/delete_all_xls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
       convertBtn.style.opacity = '0.6';
     }
 
-    fetch('http://localhost:8000/csvdump', {
+    fetch(`https://birthday-messenger.onrender.com/csvdump`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -570,7 +570,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const uploadOne = (file) => {
       const fd = new FormData();
       fd.append('file', file, file.name);
-      return fetch('http://localhost:8000/upload_excel', {
+      return fetch(`https://birthday-messenger.onrender.com/upload_excel`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
         body: fd
