@@ -1,7 +1,6 @@
 import pandas as pd
 import glob
 import os
-import csv
 import base64
 import secrets
 import asyncio
@@ -10,19 +9,11 @@ from datetime import datetime, date
 from typing import Optional
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (
-    Mail,
-    Attachment,
-    FileContent,
-    FileName,
-    FileType,
-    Disposition,
-)
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
-from components.whatsapp_msg import send_whatsapp
 from components.text_ai import text_gen
+import smtplib
+from email.message import EmailMessage
 
 # --- Load environment first ---
 load_dotenv()
@@ -76,17 +67,12 @@ CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "All_StudentMas
 # --------------------------------------------------------------------------------------
 
 
-def create_birthday_card(name: str, message: str) -> str:
+def create_birthday_card(name: str) -> str:
     """Create a custom birthday card image with name & AI-generated message."""
     img = Image.open(CARD_TEMPLATE)
     draw = ImageDraw.Draw(img)
-
-    name_font = ImageFont.truetype(FONT_PATH, 80)
-    msg_font = ImageFont.truetype(FONT_PATH, 50)
-
-    draw.text((200, 150), name, font=name_font, fill="blue")
-    draw.text((200, 300), message, font=msg_font, fill="black")
-
+    name_font = ImageFont.truetype(FONT_PATH, 45)
+    draw.text((220, 310), name, font=name_font, fill="#000080")
     output_path = os.path.join(BASE_DIR, "birthday_card_custom.png")
     img.save(output_path)
     return output_path
@@ -396,6 +382,12 @@ def send_email():
     else:
         return jsonify({"error": "Invalid input format. Must be dict or list"}), 400
 
+    SMTP_HOST = os.getenv("SMTP_HOST")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER")
+    SMTP_PASS = os.getenv("SMTP_PASS")
+    SMTP_FROM = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
+
     results = []
     for entry in data_list:
         recipient = entry.get("recipient")
@@ -405,24 +397,15 @@ def send_email():
 
         name = entry.get("name", "Friend")
         subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
-        recipient_phone = entry.get("recipient_phone", "")
 
         father_email = entry.get("father_email")
-        father_phone = entry.get("father_phone")
         mother_email = entry.get("mother_email")
-        mother_phone = entry.get("mother_phone")
 
         extra_recipients = []
         if father_email:
             extra_recipients.append(father_email)
         if mother_email:
             extra_recipients.append(mother_email)
-
-        extra_phones = []
-        if father_phone:
-            extra_phones.append(str(father_phone))
-        if mother_phone:
-            extra_phones.append(str(mother_phone))
 
         try:
             message = asyncio.run(text_gen(name))
@@ -431,48 +414,39 @@ def send_email():
             continue
 
         try:
-            card_path = create_birthday_card(name, message)
+            card_path = create_birthday_card(name)
         except Exception as e:
             results.append({"status": 500, "error": f"Card generation failed: {e}"})
             continue
 
         try:
             with open(card_path, "rb") as f:
-                encoded_file = base64.b64encode(f.read()).decode()
+                img_data = f.read()
         except Exception as e:
             results.append({"status": 500, "error": f"Attachment encoding failed: {e}"})
             continue
 
-        attachment = Attachment(
-            FileContent(encoded_file),
-            FileName(os.path.basename(card_path)),
-            FileType("image/png"),
-            Disposition("attachment"),
-        )
-
         all_recipients = [recipient] + extra_recipients
 
-        all_phones = [str(recipient_phone)] if recipient_phone else []
-        all_phones += extra_phones
-        for phone in all_phones:
-            if not phone:
-                continue
-            try:
-                send_whatsapp(message, phone, card_path)
-            except Exception:
-                pass
-
         try:
-            sg = SendGridAPIClient(SENDGRID_API_KEY)
             for email_addr in all_recipients:
-                email = Mail(
-                    from_email=FROM_EMAIL,
-                    to_emails=email_addr,
-                    subject=subject,
-                    html_content=f"<p>{message}</p>",
+                msg = EmailMessage()
+                msg["Subject"] = subject
+                msg["From"] = SMTP_FROM
+                msg["To"] = email_addr
+                msg.set_content(message)
+                msg.add_alternative(f"<p>{message}</p>", subtype="html")
+                msg.add_attachment(
+                    img_data,
+                    maintype="image",
+                    subtype="png",
+                    filename=os.path.basename(card_path)
                 )
-                email.attachment = attachment
-                sg.send(email)
+
+                with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                    server.starttls()
+                    server.login(SMTP_USER, SMTP_PASS)
+                    server.send_message(msg)
 
             results.append({
                 "status": 200,
