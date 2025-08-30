@@ -3,7 +3,8 @@ const AUTH_CACHE_KEY = "auth_cache";
 const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
-const API_URL = "https://birthday-messenger.onrender.com";
+const API_URL = "http://localhost:8000";
+// const API_URL = "https://birthday-messenger.onrender.com";
 
 // ---------- State (Results Cache) ----------
 let lastResultsPeople = [];
@@ -401,7 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const token = getToken();
       if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
       try {
-        const res = await fetch(`https://birthday-messenger.onrender.com/change_password`, {
+        const res = await fetch(`http://localhost:8000/change_password`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
           body: JSON.stringify({ old_password, new_password })
@@ -545,17 +546,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const p = lastResultsPeople[0] || {};
-      const payload = {
-        name: p.name || "",
-        recipient: p.email || "",
-        recipient_phone: p.phone || "",
-        father_email: p.father_email || "",
-        father_phone: p.father_phone || "",
-        mother_email: p.mother_email || "",
-        mother_phone: p.mother_phone || "",
-      };
-
       sendBtn.classList.add("loading");
       sendBtn.disabled = true;
       sendBtn.setAttribute("aria-busy", "true");
@@ -568,7 +558,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: "Bearer " + getToken(),
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(lastResultsPeople),
         });
         let data;
         try {
@@ -581,7 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("Send error detail:", data);
           return;
         }
-        // TODO: add all the mobile numbers and emails to the payload
+        
         alert("Send succeeded");
       } catch (err) {
         console.error("Network/send error:", err);

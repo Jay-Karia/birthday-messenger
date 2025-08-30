@@ -263,24 +263,11 @@ def read_csv_matches(month_day: str) -> list[dict]:
             return str(row.get(colname, "")).strip()
 
         rec = {
-            "id": get_field("id"),
             "name": get_field("name"),
-            "app_id": get_field("app_id"),
             "birthday": bday_dt.strftime("%Y-%m-%d"),
             "email": get_field("email"),
-            "phone": _normalize_phone_generic(get_field("phone")),
-            "father_email": get_field("father_email"),
-            "father_phone": _normalize_phone_generic(get_field("father_phone")),
-            "mother_email": get_field("mother_email"),
-            "mother_phone": _normalize_phone_generic(get_field("mother_phone")),
+            "parent_email": get_field("Parent email"),
         }
-
-        # Optional heuristic: if one parent phone missing and the other exists, mirror it.
-        if not rec["father_phone"] and rec["mother_phone"]:
-            rec["father_phone"] = rec["mother_phone"]
-        if not rec["mother_phone"] and rec["father_phone"]:
-            rec["mother_phone"] = rec["father_phone"]
-
         matches.append(rec)
 
     return matches
@@ -384,7 +371,8 @@ def send_email():
     elif isinstance(datas, list):
         data_list = datas
     else:
-        return jsonify({"error": "Invalid input format. Must be dict or list"}), 400
+        return jsonify({"error": "Invalid input format. Must be dict or list"}), 
+
 
     results = []
     for entry in data_list:
@@ -552,18 +540,6 @@ def csvDump():
         "download_url": "/download_csv"
     }
     return jsonify(response), 200
-
-
-@app.route("/download_csv", methods=["GET"])
-def download_csv():
-    """Download the consolidated CSV file (auth required)."""
-    auth_error = require_auth()
-    if auth_error:
-        return auth_error
-    if not os.path.exists(CSV_PATH):
-        return jsonify({"error": "CSV not generated yet"}), 404
-    return send_file(CSV_PATH, as_attachment=True, download_name=os.path.basename(CSV_PATH))
-
 
 @app.route("/delete_all_xls", methods=["POST"])
 def delete_all_xls():
