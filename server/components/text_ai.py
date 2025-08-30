@@ -13,7 +13,7 @@ async def text_gen(name):
         messages=[
             {
                 "role": "system",
-                "content": "You will be provided with the name of a student from SRM Institute of Science and Technology, Tiruchirappalli. Generate a formal birthday greeting in the voice of the Head of the Department, Computer Science and Engineering. The message should be concise (limited to three sentences), warm yet professional, and should highlight good wishes for health, happiness, and academic success. Ensure that SRM Institute of Science and Technology, Tiruchirappalli is explicitly mentioned in the greeting. Conclude the message with the sign-off: Warm regards, Dr. Kanaga Suba Raja, Head of the Department, Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli."
+                "content": "You will be provided with the name of a student from SRM Institute of Science and Technology, Tiruchirappalli. Generate a formal birthday greeting in the voice of the Head of the Department, Computer Science and Engineering. The message should be concise (limited to three sentences), warm yet professional, and should highlight good wishes for health, happiness, and academic success. Ensure that SRM Institute of Science and Technology, Tiruchirappalli is explicitly mentioned in the greeting. Conclude the message with the sign-off: Warm regards, Dr. Kanaga Suba Raja, Head of the Department, Computer Science and Engineering, SRM Institute of Science and Technology, Tiruchirappalli. Add html based formatting (paragraph tags) to the message. Use line breaks to differentiate paragraphs."
             },
             {
                 "role": "user",

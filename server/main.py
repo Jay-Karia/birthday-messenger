@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from components.text_ai import text_gen
 from helper import send_email_with_image
+import re
 
 # --- Load environment first ---
 load_dotenv()
@@ -370,9 +371,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    auth_error = require_auth()
-    if auth_error:
-        return auth_error
+    # auth_error = require_auth()
+    # if auth_error:
+    #     return auth_error
 
     datas = request.json
     if not datas:
@@ -393,6 +394,20 @@ def send_email():
             continue
 
         name = entry.get("name", "Friend")
+        if isinstance(name, str) and name.strip() and name.upper() == name:
+            raw = name.strip()
+            # Collapse multiple trailing dots
+            raw = re.sub(r'\.{2,}', '.', raw)
+            parts = raw.split()
+            fixed = []
+            for p in parts:
+            # Preserve single-letter initials (with or without period)
+                if re.fullmatch(r'[A-Z]\.?', p):
+                    fixed.append(p[0].upper() + '.')
+                else:
+                    core = re.sub(r'\.+$', '', p)
+                    fixed.append(core.capitalize())
+            name = " ".join(fixed).replace('. .', '.')
         subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
 
         father_email = entry.get("father_email")
