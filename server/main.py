@@ -371,9 +371,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    # auth_error = require_auth()
-    # if auth_error:
-    #     return auth_error
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
 
     datas = request.json
     if not datas:
