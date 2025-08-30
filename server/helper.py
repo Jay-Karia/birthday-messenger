@@ -11,33 +11,14 @@ load_dotenv()
 
 EMAIL_SENDER = os.getenv("EMAIL_SENDER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
 
 def validate_env():
     missing = [k for k, v in {
         "EMAIL_SENDER": EMAIL_SENDER,
         "EMAIL_PASSWORD": EMAIL_PASSWORD,
-        "EMAIL_RECEIVER": EMAIL_RECEIVER,
     }.items() if not v]
     if missing:
         raise RuntimeError(f"Missing env vars: {', '.join(missing)}")
-
-def send_basic_email(subject: str, body: str, to: str | None = None):
-    validate_env()
-    msg = EmailMessage()
-    msg["From"] = EMAIL_SENDER
-    msg["To"] = to or EMAIL_RECEIVER
-    msg["Subject"] = subject
-    msg.set_content(body)
-
-    # Insecure: disabling SSL verification as requested. Do NOT use in production.
-    context = ssl._create_unverified_context()
-
-    # Log in and send the email
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context, timeout=30) as smtp:
-        smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        smtp.send_message(msg)
-    print("[SUCCESS] Email sent to", msg["To"]) 
 
 def send_email_with_image(
     subject: str,
