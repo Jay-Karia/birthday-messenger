@@ -1,3 +1,4 @@
+import ssl
 import pandas as pd
 import glob
 import os
@@ -12,8 +13,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 from components.text_ai import text_gen
-import smtplib
-from email.message import EmailMessage
+from helper import send_email_with_image
 
 # --- Load environment first ---
 load_dotenv()
@@ -29,6 +29,9 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 ACTIVE_TOKENS: set[str] = set()
 AUTH_USER = os.getenv("AUTH_USER")
 AUTH_PASS = os.getenv("AUTH_PASS")
+EMAIL_SENDER = os.getenv("EMAIL_SENDER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+EMAIL_RECEIVER = os.getenv("EMAIL_RECEIVER")
 # Mutable current password (can be changed at runtime)
 AUTH_STATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth_state.json")
 
@@ -367,9 +370,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    auth_error = require_auth()
-    if auth_error:
-        return auth_error
+    # auth_error = require_auth()
+    # if auth_error:
+    #     return auth_error
 
     datas = request.json
     if not datas:
@@ -381,12 +384,6 @@ def send_email():
         data_list = datas
     else:
         return jsonify({"error": "Invalid input format. Must be dict or list"}), 400
-
-    SMTP_HOST = os.getenv("SMTP_HOST")
-    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-    SMTP_USER = os.getenv("SMTP_USER")
-    SMTP_PASS = os.getenv("SMTP_PASS")
-    SMTP_FROM = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
 
     results = []
     for entry in data_list:
@@ -430,28 +427,13 @@ def send_email():
 
         try:
             for email_addr in all_recipients:
-                msg = EmailMessage()
-                msg["Subject"] = subject
-                msg["From"] = SMTP_FROM
-                msg["To"] = email_addr
-                msg.set_content(message)
-                msg.add_alternative(f"<p>{message}</p>", subtype="html")
-                msg.add_attachment(
-                    img_data,
-                    maintype="image",
-                    subtype="png",
-                    filename=os.path.basename(card_path)
+                send_email_with_image(
+                    subject=f"Happy Birthday, {name}!! Wishes from SRM Institute of Science and Technology, Trichy",
+                    body_text=message,
+                    recipient=email_addr,
+                    image_path=card_path,
+                    inline=True,
                 )
-
-                with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-                    server.starttls()
-                    server.login(SMTP_USER, SMTP_PASS)
-                    server.send_message(msg)
-
-            results.append({
-                "status": 200,
-                "message": f"Email sent successfully to {all_recipients}"
-            })
         except Exception as e:
             results.append({"status": 500, "error": f"Email send failed: {e}"})
 
