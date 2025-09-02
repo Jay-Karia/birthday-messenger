@@ -566,7 +566,50 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
         
-        alert("Send succeeded");
+        // Collect ALL emails (child + parent) for every person (no de-duplication)
+        const lines = [];
+        let totalEmails = 0;
+
+        (lastResultsPeople || []).forEach(p => {
+          const name =
+            p && p.name ? String(p.name).trim() : "(Unnamed)";
+
+          // Backend now uses student_email (fallback to legacy p.email just in case)
+          const studentEmail =
+            p && (p.student_email || p.email)
+              ? String(p.student_email || p.email).trim()
+              : "";
+
+          // Primary parent email field
+          const parentEmail =
+            p && p.parent_email ? String(p.parent_email).trim() : "";
+
+          // Optional extra specific parent emails
+          const extraParentEmails = [];
+          if (p && p.father_email) extraParentEmails.push(String(p.father_email).trim());
+            if (p && p.mother_email) extraParentEmails.push(String(p.mother_email).trim());
+
+          const allEmails = [];
+          if (studentEmail) allEmails.push("Student: " + studentEmail);
+          if (parentEmail) allEmails.push("Parent: " + parentEmail);
+          extraParentEmails.filter(Boolean).forEach(pe => allEmails.push("Parent: " + pe));
+
+          totalEmails += allEmails.length;
+
+          lines.push(
+            name +
+              (allEmails.length
+          ? " -> " + allEmails.join(" | ")
+          : " -> (no emails)")
+          );
+        });
+
+        alert(
+          "Send succeeded.\n\nTotal email entries sent: " +
+            totalEmails +
+            "\n\nDetails:\n" +
+            (lines.length ? lines.join("\n") : "(none)")
+        );
       } catch (err) {
         console.error("Network/send error:", err);
         alert("Network error while sending message.");

@@ -125,29 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join('');
   }
 
-  // Global functions for file management
-  window.replaceFile = function(filename) {
-    if (!confirm(`Are you sure you want to replace "${filename}"? This will permanently remove the current file.`)) {
-      return;
-    }
-    
-    // Create a temporary file input for replacement
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.xlsx,.xls';
-    input.onchange = function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      // Delete the old file first
-      deleteFileInternal(filename, () => {
-        // Upload the new file with the same name
-        uploadReplacementFile(file, filename);
-      });
-    };
-    input.click();
-  };
-
   window.deleteFile = function(filename) {
     if (!confirm(`Are you sure you want to delete "${filename}"? This action cannot be undone.`)) {
       return;
@@ -176,30 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch(err => {
         console.error('Delete error:', err);
-      });
-  }
-
-  function uploadReplacementFile(file, originalFilename) {
-    const fd = new FormData();
-    fd.append('file', file, originalFilename); // Use original filename
-    
-    fetch(`http://localhost:8000/upload_excel`, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-      },
-      body: fd
-    })
-      .then(async res => {
-        const data = await res.json();
-        if (res.ok) {
-          loadCurrentFiles(); // Refresh the list
-        } else {
-          console.error('Replacement failed:', data.error);
-        }
-      })
-      .catch(err => {
-        console.error('Upload error:', err);
       });
   }
 
