@@ -1,4 +1,36 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // ------------------ Config & Helpers ------------------
+  const PRIMARY_API_PORT = 8000;
+  const FALLBACK_API_PORT = 5000; // try if primary fails
+  const API_BASE = (typeof API_URL !== 'undefined' && API_URL)
+    ? API_URL.replace(/\/$/, '')
+    : `http://localhost:${PRIMARY_API_PORT}`;
+
+  async function fetchWithFallback(path, options) {
+    const urlPrimary = `${API_BASE}${path}`;
+    try {
+      const res = await fetch(urlPrimary, options);
+      if (!res.ok && res.status === 404 && API_BASE.includes(PRIMARY_API_PORT.toString())) {
+        // maybe running on fallback port instead
+        const fallbackUrl = `http://localhost:${FALLBACK_API_PORT}${path}`;
+        try {
+          const res2 = await fetch(fallbackUrl, options);
+          res2._usedFallback = true; // mark for debugging
+          return res2;
+        } catch {}
+      }
+      return res;
+    } catch (e) {
+      if (API_BASE.includes(PRIMARY_API_PORT.toString())) {
+        try {
+          return await fetch(`http://localhost:${FALLBACK_API_PORT}${path}`, options);
+        } catch (e2) {
+          throw e2;
+        }
+      }
+      throw e;
+    }
+  }
   // Auth helper function
   function hasAuth() {
     const token = localStorage.getItem("auth_token");
@@ -39,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    fetch(`http://localhost:8000/list_files`, {
+    fetchWithFallback(`/list_files`, {
       method: 'GET',
       headers: {
         'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
@@ -135,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function deleteFileInternal(filename, callback) {
-    fetch(`http://localhost:8000/delete_xls`, {
+    fetchWithFallback(`/delete_xls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -201,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
     
-    fetch(`http://localhost:8000/upload_excel`, {
+    fetchWithFallback(`/upload_excel`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
@@ -307,7 +339,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectBtn.disabled = true;
       selectBtn.style.opacity = "0.6";
 
-      fetch(`http://localhost:8000/upload_excel`, {
+      fetchWithFallback(`/upload_excel`, {
         method: "POST",
         headers: {
           Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -410,7 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteAllBtn.style.opacity = '0.6';
     }
 
-    fetch(`http://localhost:8000/delete_all_xls`, {
+    fetchWithFallback(`/delete_all_xls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,7 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
       convertBtn.style.opacity = '0.6';
     }
 
-    fetch(`http://localhost:8000/csvdump`, {
+    fetchWithFallback(`/csvdump`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -520,10 +552,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let succeeded = 0;
     let failed = 0;
 
-    const uploadOne = (file) => {
+    const uploadOne = async (file) => {
       const fd = new FormData();
       fd.append('file', file, file.name);
-      return fetch(`http://localhost:8000/upload_excel`, {
+      return fetchWithFallback(`/upload_excel`, {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
         body: fd
@@ -568,45 +600,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Theme toggle functionality
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
-  const uploadInput = document.getElementById("upload-input");
-  const uploadBtn = document.getElementById("upload-btn");
-  
-  if (uploadBtn && uploadInput) {
-    uploadBtn.addEventListener("click", () => uploadInput.click());
-    uploadInput.addEventListener("change", () => {
-      const files = Array.from(uploadInput.files);
-      if (files.length === 0) return;
-      handleMultipleUpload(files);
-    });
+  const uploadInput = document.getElementById("upload-input"); // primary hidden input (multi)
+  const uploadBtn = document.getElementById("upload-btn"); // may not exist on this page
+  let fileDialogOpen = false; // global guard
+
+  function openFileDialog() {
+    if (!uploadInput) return;
+    if (fileDialogOpen) return;
+    fileDialogOpen = true;
+    uploadInput.click();
+    // reset guard after a short delay (dialog is modal)
+    setTimeout(() => { fileDialogOpen = false; }, 600);
+  }
+
+  if (uploadBtn) {
+    uploadBtn.addEventListener('click', (e) => { e.preventDefault(); openFileDialog(); });
   }
 
   // Unified input & drop area/browse button
-  const hiddenMainInput = document.getElementById('upload-input');
+  const hiddenMainInput = document.getElementById('upload-input'); // same element
   const dropArea = document.getElementById('drop-area');
   const browseBtn = document.getElementById('browse-btn');
   if (hiddenMainInput) {
+    // Ensure only ONE change handler processes uploads
     hiddenMainInput.addEventListener('change', () => {
       const files = Array.from(hiddenMainInput.files || []);
-      if (files.length) {
-        handleMultipleUpload(files);
-        hiddenMainInput.value = '';
-      }
-    });
+      if (!files.length) return;
+      handleMultipleUpload(files);
+      // Clear input so selecting same file again re-triggers change
+      hiddenMainInput.value = '';
+    }, { once: false });
   }
-  function triggerSelect() {
+  function triggerSelect(evt) {
+    if (evt) evt.stopPropagation();
     if (!hasAuth()) {
       alert('Login required to upload files');
       return;
     }
-    hiddenMainInput && hiddenMainInput.click();
+    openFileDialog();
   }
-  if (browseBtn) browseBtn.addEventListener('click', triggerSelect);
+  if (browseBtn) browseBtn.addEventListener('click', (e) => { e.stopPropagation(); triggerSelect(e); });
   if (dropArea) {
-    ['click','keydown'].forEach(evt => dropArea.addEventListener(evt, (e) => {
-      if (evt === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-      if (e.type === 'keydown') e.preventDefault();
-      triggerSelect();
-    }));
+    // Only respond to Enter/Space key; avoid generic click to prevent double triggers
+    dropArea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        triggerSelect(e);
+      }
+    });
     ['dragenter','dragover'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); dropArea.classList.add('dragover');}));
     ['dragleave','drop'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); if(evt==='drop'){ const files=Array.from(e.dataTransfer.files||[]).filter(f=>/\.xlsx?$/.test(f.name.toLowerCase())); if(files.length) handleMultipleUpload(files);} dropArea.classList.remove('dragover');}));
   }
