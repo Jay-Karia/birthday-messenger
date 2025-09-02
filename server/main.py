@@ -171,26 +171,20 @@ def _normalize_phone(val) -> str:
 # Header-aware CSV field mapping infrastructure
 # ---------------------------------------------
 FIELD_SYNONYMS = {
-    "id": [
-        "id", "register number", "reg no", "reg number", "roll no", "roll number", "registration no"
-    ],
     "name": ["student name", "name", "full name"],
-    "app_id": ["app id", "application id", "application number", "application no", "app no"],
     "birthday": ["dob", "date of birth", "birth date", "birthday"],
-    "email": ["email", "email id", "email address", "mail id", "mail"],
+    # Parent/guardian email columns
+    "parent_email": [
+        "parent email", "parent mail", "parent email id", "parent mail id",
+        "parent e-mail", "guardian email", "guardian mail", "guardian email id"
+    ],
+    # Student email columns (skip headers that contain parent/guardian at match time)
+    "email": [
+        "student email", "student e-mail", "email", "email id", "email address", "mail id"
+    ],
     "phone": [
         "student whatsapp no.", "student whatsapp", "student whatsapp number",
         "student mobile", "student mobile no", "student phone", "phone", "mobile"
-    ],
-    "father_email": ["father email", "father mail", "father mail id", "father email id"],
-    "father_phone": [
-        "father phone", "father mobile", "father mobile no", "father whatsapp",
-        "father whatsapp no.", "father whatsapp number", "parent whatsapp no."
-    ],
-    "mother_email": ["mother email", "mother mail", "mother mail id", "mother email id"],
-    "mother_phone": [
-        "mother phone", "mother mobile", "mother mobile no", "mother whatsapp",
-        "mother whatsapp no.", "mother whatsapp number"
     ],
 }
 
@@ -200,9 +194,12 @@ def _normalize_header(h: str) -> str:
 
 
 def _map_headers(columns: list[str]) -> dict:
-    """
-    Returns a mapping from internal field -> actual CSV column name (or None)
-    using synonyms with flexible containment matching.
+    """Map internal field names to actual CSV column headers.
+
+    Matching rules:
+      - Exact match OR candidate substring contained in normalized column header.
+      - For the student 'email' field we deliberately skip columns whose header contains
+        'parent ' or 'guardian ' to avoid collisions with parent/guardian email columns.
     """
     norm_columns = { _normalize_header(c): c for c in columns }
     mapping = { k: None for k in FIELD_SYNONYMS.keys() }
@@ -210,7 +207,8 @@ def _map_headers(columns: list[str]) -> dict:
         for candidate in candidates:
             norm_candidate = _normalize_header(candidate)
             for nc_key, original in norm_columns.items():
-                # equality or candidate contained in column header
+                if internal == "email" and ("parent " in nc_key or "guardian " in nc_key):
+                    continue  # don't let generic email claim parent/guardian column
                 if nc_key == norm_candidate or norm_candidate in nc_key:
                     mapping[internal] = original
                     break
@@ -262,11 +260,14 @@ def read_csv_matches(month_day: str) -> list[dict]:
                 return ""
             return str(row.get(colname, "")).strip()
 
+        parent_email = get_field("parent_email")  # only explicit parent email column
+
         rec = {
             "name": get_field("name"),
             "birthday": bday_dt.strftime("%Y-%m-%d"),
-            "email": get_field("email"),
-            "parent_email": get_field("Parent email"),
+            "email": get_field("email"),  # student email
+            "phone": get_field("phone"),
+            "parent_email": parent_email,
         }
         matches.append(rec)
 
@@ -358,9 +359,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    # auth_error = require_auth()
-    # if auth_error:
-    #     return auth_error
+    auth_error = require_auth()
+    if auth_error:
+        return auth_error
 
     datas = request.json
     if not datas:
@@ -376,7 +377,8 @@ def send_email():
 
     results = []
     for entry in data_list:
-        recipient = entry.get("recipient")
+        # Accept either explicit recipient or fall back to the student's email
+        recipient = entry.get("recipient") or entry.get("email")
         if not recipient:
             results.append({"status": 400, "error": "Recipient email required"})
             continue
