@@ -3,7 +3,7 @@ const AUTH_CACHE_KEY = "auth_cache";
 const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
-const API_URL = "http://localhost:8000";
+const API_URL = "https://birthday-messenger.onrender.com";
 // const API_URL = "https://birthday-messenger.onrender.com";
 
 // ---------- State (Results Cache) ----------
@@ -119,13 +119,17 @@ function renderResultsList(container, title, people) {
   const rows = people
     .map((p) => {
       const safe = (v) => (v ? escapeHtml(String(v)) : "–");
-      const joinPair = (email, phone) => {
-        if (email && phone)
-          return `${escapeHtml(email)}<br><small>${escapeHtml(phone)}</small>`;
-        if (email) return escapeHtml(email);
-        if (phone) return `<small>${escapeHtml(phone)}</small>`;
-        return "–";
-      };
+      // Determine parent email preference: father first, then mother; if both, show father (primary) with mother in a small new line.
+      let parentEmailHtml = "–";
+      const fatherEmail = p.father_email || p.fatherEmail || p.father;
+      const motherEmail = p.mother_email || p.motherEmail || p.mother;
+      if (fatherEmail && motherEmail && fatherEmail !== motherEmail) {
+        parentEmailHtml = `${escapeHtml(fatherEmail)}<br><small>${escapeHtml(motherEmail)}</small>`;
+      } else if (fatherEmail) {
+        parentEmailHtml = escapeHtml(fatherEmail);
+      } else if (motherEmail) {
+        parentEmailHtml = escapeHtml(motherEmail);
+      }
       // Extract birth year from record. Backend sends 'birthday' in YYYY-MM-DD. Fallback to 'dob'.
       let year = "";
       const dobSource = p.birthday || p.dob || p.DOB || p.date_of_birth;
@@ -139,8 +143,7 @@ function renderResultsList(container, title, people) {
         <td>${safe(p.name)}</td>
         <td>${safe(p.email)}</td>
         <td>${safe(p.phone)}</td>
-        <td>${joinPair(p.father_email, p.father_phone)}</td>
-        <td>${joinPair(p.mother_email, p.mother_phone)}</td>
+        <td>${parentEmailHtml}</td>
         <td>${year ? safe(year) : "–"}</td>
       </tr>`;
     })
@@ -155,8 +158,7 @@ function renderResultsList(container, title, people) {
             <th scope="col">Name</th>
             <th scope="col">Email</th>
             <th scope="col">Phone</th>
-            <th scope="col">Father</th>
-            <th scope="col">Mother</th>
+            <th scope="col">Parent Email</th>
             <th scope="col">Year</th>
           </tr>
         </thead>
@@ -402,7 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const token = getToken();
       if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
       try {
-        const res = await fetch(`http://localhost:8000/change_password`, {
+        const res = await fetch(`https://birthday-messenger.onrender.com/change_password`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
           body: JSON.stringify({ old_password, new_password })

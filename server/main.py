@@ -358,9 +358,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    auth_error = require_auth()
-    if auth_error:
-        return auth_error
+    # auth_error = require_auth()
+    # if auth_error:
+    #     return auth_error
 
     datas = request.json
     if not datas:
@@ -398,14 +398,11 @@ def send_email():
             name = " ".join(fixed).replace('. .', '.')
         subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
 
-        father_email = entry.get("father_email")
-        mother_email = entry.get("mother_email")
+        parent_email = entry.get("parent_email")
 
         extra_recipients = []
-        if father_email:
-            extra_recipients.append(father_email)
-        if mother_email:
-            extra_recipients.append(mother_email)
+        if parent_email:
+            extra_recipients.append(parent_email)
 
         try:
             message = asyncio.run(text_gen(name))
