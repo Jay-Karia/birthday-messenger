@@ -72,12 +72,12 @@ CSV_PATH = os.path.normpath(os.path.join(BASE_DIR, "..", "data", "All_StudentMas
 
 
 def create_birthday_card(name: str) -> str:
-    """Create a custom birthday card image with name & AI-generated message."""
+    """Create a custom birthday card image with name"""
     img = Image.open(CARD_TEMPLATE)
     draw = ImageDraw.Draw(img)
-    name_font = ImageFont.truetype(FONT_PATH, 45)
-    draw.text((220, 310), name, font=name_font, fill="#000080")
-    output_path = os.path.join(BASE_DIR, "birthday_card_custom.png")
+    name_font = ImageFont.truetype(FONT_PATH, 48)
+    draw.text((235, 315), f"{name} ,", font=name_font, fill="#000080")
+    output_path = os.path.join(BASE_DIR, "birthday_result.png")
     img.save(output_path)
     return output_path
 
@@ -662,3 +662,6 @@ def server_error(e):
 if __name__ == "__main__":
     # Default port changed earlier in Electron fetches to 8000; keep 5000 if you run separately
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
+
+
+# create_birthday_card("S. Shaun Benedict")
