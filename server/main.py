@@ -356,6 +356,7 @@ def filter_birthdays():
         "people": matches
     }), 200
 
+
 @app.route("/send_card", methods=["POST"])
 def send_email():
     auth_error = require_auth()
@@ -372,6 +373,7 @@ def send_email():
         data_list = datas
     else:
         return jsonify({"error": "Invalid input format. Must be dict or list"}), 
+
 
     results = []
     for entry in data_list:
@@ -426,7 +428,6 @@ def send_email():
 
         # Send single email to student with parent in CC
         try:
-            print(f"[MAIN_DEBUG] About to send email to {recipient} with CC: {cc_recipients}")
             send_email_with_image(
                 subject=f"Happy Birthday, {name}!! Wishes from SRM Institute of Science and Technology, Trichy",
                 body_text=message,
@@ -435,12 +436,7 @@ def send_email():
                 inline=True,
                 cc=cc_recipients,
             )
-            print(f"[MAIN_DEBUG] Email sent successfully to {recipient}")
-            results.append({"status": 200, "message": f"Email sent successfully to {recipient}"})
         except Exception as e:
-            print(f"[MAIN_ERROR] Email send failed for {recipient}: {type(e).__name__}: {e}")
-            import traceback
-            print(f"[MAIN_ERROR] Full traceback: {traceback.format_exc()}")
             results.append({"status": 500, "error": f"Email send failed: {e}"})
 
     return jsonify(results), 200
