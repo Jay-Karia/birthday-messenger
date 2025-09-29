@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Static API base (remote)
-  const API_BASE = 'https://birthday-messenger.onrender.com';
+  // const API_BASE = 'https://birthday-messenger.onrender.com';
+  const API_BASE = "http://localhost:8000";
   // Auth helper function
   function hasAuth() {
     const token = localStorage.getItem("auth_token");

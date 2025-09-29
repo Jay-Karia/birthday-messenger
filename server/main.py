@@ -402,9 +402,10 @@ def send_email():
 
         parent_email = entry.get("parent_email")
 
-        extra_recipients = []
+        # Prepare CC list for parent email
+        cc_recipients = []
         if parent_email:
-            extra_recipients.append(parent_email)
+            cc_recipients.append(parent_email)
 
         try:
             message = asyncio.run(text_gen(name))
@@ -425,17 +426,16 @@ def send_email():
             results.append({"status": 500, "error": f"Attachment encoding failed: {e}"})
             continue
 
-        all_recipients = [recipient] + extra_recipients
-
+        # Send single email to student with parent in CC
         try:
-            for email_addr in all_recipients:
-                send_email_with_image(
-                    subject=f"Happy Birthday, {name}!! Wishes from SRM Institute of Science and Technology, Trichy",
-                    body_text=message,
-                    recipient=email_addr,
-                    image_path=card_path,
-                    inline=True,
-                )
+            send_email_with_image(
+                subject=f"Happy Birthday, {name}!! Wishes from SRM Institute of Science and Technology, Trichy",
+                body_text=message,
+                recipient=recipient,
+                image_path=card_path,
+                inline=True,
+                cc=cc_recipients,
+            )
         except Exception as e:
             results.append({"status": 500, "error": f"Email send failed: {e}"})
 

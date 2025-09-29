@@ -27,12 +27,18 @@ def send_email_with_image(
     recipient: str | None = None,
     to: str | None = None,
     inline: bool = True,
+    cc: list[str] | None = None,
 ):
     validate_env()
     msg = EmailMessage()
     msg["From"] = EMAIL_SENDER
     msg["To"] = recipient
     msg["Subject"] = subject
+    
+    # Add CC recipients if provided
+    if cc:
+        msg["Cc"] = ", ".join(cc)
+    
     msg.set_content(body_text)
 
     img_file = Path(image_path)

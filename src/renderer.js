@@ -3,8 +3,8 @@ const AUTH_CACHE_KEY = "auth_cache";
 const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
-const API_URL = "https://birthday-messenger.onrender.com";
-// const API_URL = "http://localhost:8000";
+// const API_URL = "";
+const API_URL = "http://localhost:8000";
 
 // ---------- State (Results Cache) ----------
 let lastResultsPeople = [];
@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const token = getToken();
       if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
       try {
-        const res = await fetch('https://birthday-messenger.onrender.com/change_password', {
+        const res = await fetch('http://localhost:8000/change_password', {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
           body: JSON.stringify({ old_password, new_password })
