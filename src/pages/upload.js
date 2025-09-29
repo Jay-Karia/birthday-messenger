@@ -1,21 +1,21 @@
 document.addEventListener("DOMContentLoaded", () => {
-<<<<<<< HEAD
-  // Static API base (remote)
-  const API_BASE = 'https://birthday-messenger.onrender.com';
-  // const API_BASE = "http://localhost:8000";
-=======
   // ------------------ Config & Helpers ------------------
   const PRIMARY_API_PORT = 8000;
   const FALLBACK_API_PORT = 5000; // try if primary fails
-  const API_BASE = (typeof API_URL !== 'undefined' && API_URL)
-    ? API_URL.replace(/\/$/, '')
-    : `http://localhost:${PRIMARY_API_PORT}`;
+  const API_BASE =
+    typeof API_URL !== "undefined" && API_URL
+      ? API_URL.replace(/\/$/, "")
+      : `http://localhost:${PRIMARY_API_PORT}`;
 
   async function fetchWithFallback(path, options) {
     const urlPrimary = `${API_BASE}${path}`;
     try {
       const res = await fetch(urlPrimary, options);
-      if (!res.ok && res.status === 404 && API_BASE.includes(PRIMARY_API_PORT.toString())) {
+      if (
+        !res.ok &&
+        res.status === 404 &&
+        API_BASE.includes(PRIMARY_API_PORT.toString())
+      ) {
         // maybe running on fallback port instead
         const fallbackUrl = `http://localhost:${FALLBACK_API_PORT}${path}`;
         try {
@@ -28,7 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (e) {
       if (API_BASE.includes(PRIMARY_API_PORT.toString())) {
         try {
-          return await fetch(`http://localhost:${FALLBACK_API_PORT}${path}`, options);
+          return await fetch(
+            `http://localhost:${FALLBACK_API_PORT}${path}`,
+            options,
+          );
         } catch (e2) {
           throw e2;
         }
@@ -36,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
       throw e;
     }
   }
->>>>>>> parent of 16c91d7 (fix: use hosted api in frontend)
+
   // Auth helper function
   function hasAuth() {
     const token = localStorage.getItem("auth_token");
@@ -55,20 +58,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Function to load and display current files
   function loadCurrentFiles() {
-    const loadingEl = document.getElementById('files-loading');
-    const listEl = document.getElementById('files-list');
-    const noFilesEl = document.getElementById('no-files');
-    const fileCountEl = document.getElementById('file-count');
-    const deleteAllBtn = document.getElementById('delete-all-btn');
-    const convertBtn = document.getElementById('convert-btn');
+    const loadingEl = document.getElementById("files-loading");
+    const listEl = document.getElementById("files-list");
+    const noFilesEl = document.getElementById("no-files");
+    const fileCountEl = document.getElementById("file-count");
+    const deleteAllBtn = document.getElementById("delete-all-btn");
+    const convertBtn = document.getElementById("convert-btn");
 
     if (!hasAuth()) {
-      loadingEl.style.display = 'none';
-      listEl.style.display = 'none';
-      noFilesEl.style.display = 'block';
-      if (fileCountEl) fileCountEl.textContent = '0 files';
-      if (deleteAllBtn) deleteAllBtn.style.display = 'none';
-      if (convertBtn) convertBtn.style.display = 'none';
+      loadingEl.style.display = "none";
+      listEl.style.display = "none";
+      noFilesEl.style.display = "block";
+      if (fileCountEl) fileCountEl.textContent = "0 files";
+      if (deleteAllBtn) deleteAllBtn.style.display = "none";
+      if (convertBtn) convertBtn.style.display = "none";
       noFilesEl.innerHTML = `
         <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">🔒</div>
         <p style="margin: 0; font-size: 16px">Login required</p>
@@ -78,36 +81,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     fetchWithFallback(`/list_files`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-      }
+        Authorization: "Bearer " + localStorage.getItem("auth_token"),
+      },
     })
-      .then(async res => {
+      .then(async (res) => {
         const data = await res.json();
-        loadingEl.style.display = 'none';
-        
+        loadingEl.style.display = "none";
+
         if (res.ok && data.files && data.files.length > 0) {
           displayFiles(data.files);
-          listEl.style.display = 'block';
+          listEl.style.display = "block";
           // Always show the upload interface
-          noFilesEl.style.display = 'block';
+          noFilesEl.style.display = "block";
         } else {
-          listEl.style.display = 'none';
-          noFilesEl.style.display = 'block';
-          if (fileCountEl) fileCountEl.textContent = '0 files';
-          if (deleteAllBtn) deleteAllBtn.style.display = 'none';
-          if (convertBtn) convertBtn.style.display = 'none';
+          listEl.style.display = "none";
+          noFilesEl.style.display = "block";
+          if (fileCountEl) fileCountEl.textContent = "0 files";
+          if (deleteAllBtn) deleteAllBtn.style.display = "none";
+          if (convertBtn) convertBtn.style.display = "none";
         }
       })
-      .catch(err => {
-        console.error('Error loading files:', err);
-        loadingEl.style.display = 'none';
-        listEl.style.display = 'none';
-        noFilesEl.style.display = 'block';
-        if (fileCountEl) fileCountEl.textContent = '0 files';
-        if (deleteAllBtn) deleteAllBtn.style.display = 'none';
-        if (convertBtn) convertBtn.style.display = 'none';
+      .catch((err) => {
+        console.error("Error loading files:", err);
+        loadingEl.style.display = "none";
+        listEl.style.display = "none";
+        noFilesEl.style.display = "block";
+        if (fileCountEl) fileCountEl.textContent = "0 files";
+        if (deleteAllBtn) deleteAllBtn.style.display = "none";
+        if (convertBtn) convertBtn.style.display = "none";
         noFilesEl.innerHTML = `
           <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">⚠️</div>
           <p style="margin: 0; font-size: 16px; color: #374151">Error loading files</p>
@@ -118,38 +121,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Function to display files list
   function displayFiles(files) {
-    const listEl = document.getElementById('files-list');
-    const fileCountEl = document.getElementById('file-count');
-    const deleteAllBtn = document.getElementById('delete-all-btn');
-    const convertBtn = document.getElementById('convert-btn');
+    const listEl = document.getElementById("files-list");
+    const fileCountEl = document.getElementById("file-count");
+    const deleteAllBtn = document.getElementById("delete-all-btn");
+    const convertBtn = document.getElementById("convert-btn");
     // cache for theme re-render
     window.__currentUploadFiles = files;
-    
+
     // Update file count and show/hide action buttons
     if (fileCountEl) {
-      fileCountEl.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+      fileCountEl.textContent = `${files.length} file${files.length !== 1 ? "s" : ""}`;
     }
     if (deleteAllBtn) {
-      deleteAllBtn.style.display = files.length > 0 ? 'flex' : 'none';
+      deleteAllBtn.style.display = files.length > 0 ? "flex" : "none";
     }
     if (convertBtn) {
-      convertBtn.style.display = files.length > 0 ? 'flex' : 'none';
+      convertBtn.style.display = files.length > 0 ? "flex" : "none";
     }
-    
+
     // Always show the quick upload interface, even when files exist
-    const noFilesEl = document.getElementById('no-files');
-    noFilesEl.style.display = 'block';
-    
+    const noFilesEl = document.getElementById("no-files");
+    noFilesEl.style.display = "block";
+
     // Update the header text when files exist
-    const headerText = noFilesEl.querySelector('p');
+    const headerText = noFilesEl.querySelector("p");
     if (headerText && files.length > 0) {
       headerText.textContent = `${files.length} file(s) uploaded`;
     }
-    
-    const dark = document.body.classList.contains('dark');
-    listEl.innerHTML = files.map(file => {
-      const date = new Date(file.uploaded_at);
-      return `
+
+    const dark = document.body.classList.contains("dark");
+    listEl.innerHTML = files
+      .map((file) => {
+        const date = new Date(file.uploaded_at);
+        return `
         <div class="file-item">
           <div class="file-item__top">
             <p class="file-item__name" title="${file.filename}">${file.filename}</p>
@@ -160,11 +164,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>${date.toLocaleTimeString()}</span>
           </div>
         </div>`;
-    }).join('');
+      })
+      .join("");
   }
 
-  window.deleteFile = function(filename) {
-    if (!confirm(`Are you sure you want to delete "${filename}"? This action cannot be undone.`)) {
+  window.deleteFile = function (filename) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${filename}"? This action cannot be undone.`,
+      )
+    ) {
       return;
     }
     deleteFileInternal(filename, () => {
@@ -174,30 +183,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function deleteFileInternal(filename, callback) {
     fetchWithFallback(`/delete_xls`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + localStorage.getItem("auth_token"),
       },
-      body: JSON.stringify({ filename })
+      body: JSON.stringify({ filename }),
     })
-      .then(async res => {
+      .then(async (res) => {
         const data = await res.json();
         if (res.ok) {
           if (callback) callback();
         } else {
-          console.error('Delete failed:', data.error);
+          console.error("Delete failed:", data.error);
         }
       })
-      .catch(err => {
-        console.error('Delete error:', err);
+      .catch((err) => {
+        console.error("Delete error:", err);
       });
   }
 
   // Quick upload functions for the no-files section
-  window.triggerFileUpload = function(year) {
+  window.triggerFileUpload = function (year) {
     if (!hasAuth()) {
-      console.log('Please login first to upload files');
+      console.log("Please login first to upload files");
       return;
     }
     const input = document.getElementById(`quick-${year}-input`);
@@ -206,19 +215,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  window.handleQuickUpload = function(year, inputElement) {
+  window.handleQuickUpload = function (year, inputElement) {
     const file = inputElement.files[0];
     if (!file) return;
 
     if (!hasAuth()) {
-      console.log('Login required to upload');
+      console.log("Login required to upload");
       return;
     }
 
     const fd = new FormData();
-    fd.append('file', file, file.name);
-    fd.append('year', year);
-    
+    fd.append("file", file, file.name);
+    fd.append("year", year);
+
     // Find the corresponding slot and update its appearance during upload
     const slot = inputElement.parentElement;
     const originalHTML = slot.innerHTML;
@@ -238,38 +247,36 @@ document.addEventListener("DOMContentLoaded", () => {
       <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">Uploading...</p>
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
-    
+
     fetchWithFallback(`/upload_excel`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
+        Authorization: "Bearer " + localStorage.getItem("auth_token"),
       },
-      body: fd
+      body: fd,
     })
-      .then(async res => {
+      .then(async (res) => {
         const data = await res.json();
         if (res.ok) {
           // Reset the slot to original state
           slot.innerHTML = originalHTML;
           // Clear the input
           const newInput = slot.querySelector('input[type="file"]');
-          if (newInput) newInput.value = '';
+          if (newInput) newInput.value = "";
           // Refresh the current files list
           loadCurrentFiles();
         } else {
           // Reset the slot and show error briefly
           slot.innerHTML = originalHTML;
-          console.error('Upload failed:', data.error);
+          console.error("Upload failed:", data.error);
         }
       })
-      .catch(err => {
-        console.error('Quick upload error:', err);
+      .catch((err) => {
+        console.error("Quick upload error:", err);
         // Reset the slot
         slot.innerHTML = originalHTML;
       });
   };
-
-
 
   // Generic file upload handler
   function setupFileUpload(year) {
@@ -302,10 +309,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const file = input.files[0];
       label.textContent = `📄 ${file.name}`;
-      
+
       const lower = file.name.toLowerCase();
       const valid = lower.endsWith(".xlsx");
-      
+
       if (!valid) {
         statusEl.style.color = "#ef4444";
         statusEl.textContent = "❌ Only .xlsx files allowed";
@@ -326,7 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Upload handler
     uploadBtn.addEventListener("click", () => {
       if (!input.files || !input.files[0]) return;
-      
+
       if (!hasAuth()) {
         statusEl.style.color = "#ef4444";
         statusEl.textContent = "🔒 Login required";
@@ -337,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const fd = new FormData();
       fd.append("file", file, file.name);
       fd.append("year", year); // Add year information
-      
+
       statusEl.style.color = "#3b82f6";
       statusEl.textContent = "🚀 Uploading...";
       uploadBtn.disabled = true;
@@ -359,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
           } catch {
             data = {};
           }
-          
+
           if (res.ok) {
             statusEl.style.color = "#10b981";
             statusEl.textContent = `🎉 ${year.charAt(0).toUpperCase() + year.slice(1)} year upload successful!`;
@@ -370,7 +377,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loadCurrentFiles();
           } else {
             statusEl.style.color = "#ef4444";
-            statusEl.textContent = `❌ ${data.error || 'Upload failed'}`;
+            statusEl.textContent = `❌ ${data.error || "Upload failed"}`;
           }
         })
         .catch((err) => {
@@ -384,7 +391,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const isAuthed = hasAuth();
           const hasFile = input.files && input.files[0];
           uploadBtn.disabled = !isAuthed || !hasFile;
-          uploadBtn.style.opacity = (!isAuthed || !hasFile) ? "0.6" : "1";
+          uploadBtn.style.opacity = !isAuthed || !hasFile ? "0.6" : "1";
         });
     });
   }
@@ -396,24 +403,24 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFileUpload("fourth");
 
   // Listen for auth changes to update button states
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'auth_token' || e.key === 'auth_cache') {
+  window.addEventListener("storage", (e) => {
+    if (e.key === "auth_token" || e.key === "auth_cache") {
       const isAuthed = hasAuth();
-      
+
       // Refresh files list when auth changes
       loadCurrentFiles();
-      
-      ['first', 'second', 'third', 'fourth'].forEach(year => {
+
+      ["first", "second", "third", "fourth"].forEach((year) => {
         const uploadBtn = document.getElementById(`upload-${year}-year`);
         const statusEl = document.getElementById(`${year}-year-status`);
         const input = document.getElementById(`${year}-year-input`);
-        
+
         if (uploadBtn && input) {
           const hasFile = input.files && input.files[0];
           uploadBtn.disabled = !isAuthed || !hasFile;
-          uploadBtn.style.opacity = (!isAuthed || !hasFile) ? "0.6" : "1";
+          uploadBtn.style.opacity = !isAuthed || !hasFile ? "0.6" : "1";
         }
-        
+
         if (statusEl) {
           if (!isAuthed) {
             statusEl.style.color = "#ef4444";
@@ -430,105 +437,113 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Delete All Files function
-  window.deleteAllFiles = function() {
-    if (!confirm('Are you sure you want to delete ALL Excel files? This action cannot be undone.')) {
+  window.deleteAllFiles = function () {
+    if (
+      !confirm(
+        "Are you sure you want to delete ALL Excel files? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
     if (!hasAuth()) {
-      console.log('Login required to delete files');
+      console.log("Login required to delete files");
       return;
     }
 
     // Update button state during operation
-    const deleteAllBtn = document.getElementById('delete-all-btn');
+    const deleteAllBtn = document.getElementById("delete-all-btn");
     if (deleteAllBtn) {
       deleteAllBtn.disabled = true;
-      deleteAllBtn.textContent = '🗑️ Deleting...';
-      deleteAllBtn.style.opacity = '0.6';
+      deleteAllBtn.textContent = "🗑️ Deleting...";
+      deleteAllBtn.style.opacity = "0.6";
     }
 
     fetchWithFallback(`/delete_all_xls`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-      }
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + localStorage.getItem("auth_token"),
+      },
     })
-      .then(async res => {
+      .then(async (res) => {
         const data = await res.json();
         if (res.ok) {
-          console.log('All files deleted successfully');
+          console.log("All files deleted successfully");
           loadCurrentFiles(); // Refresh the list
         } else {
-          console.error('Delete all failed:', data.error);
-          alert('Failed to delete files: ' + (data.error || 'Unknown error'));
+          console.error("Delete all failed:", data.error);
+          alert("Failed to delete files: " + (data.error || "Unknown error"));
         }
       })
-      .catch(err => {
-        console.error('Delete all error:', err);
-        alert('Network error: Unable to delete files');
+      .catch((err) => {
+        console.error("Delete all error:", err);
+        alert("Network error: Unable to delete files");
       })
       .finally(() => {
         // Reset button state
         if (deleteAllBtn) {
           deleteAllBtn.disabled = false;
-          deleteAllBtn.innerHTML = '🗑️ Delete All';
-          deleteAllBtn.style.opacity = '1';
+          deleteAllBtn.innerHTML = "🗑️ Delete All";
+          deleteAllBtn.style.opacity = "1";
         }
       });
   };
 
   // Convert to CSV function
-  window.convertToCSV = function() {
-    if (!confirm('Convert all Excel files to a single CSV file? This will process all uploaded files.')) {
+  window.convertToCSV = function () {
+    if (
+      !confirm(
+        "Convert all Excel files to a single CSV file? This will process all uploaded files.",
+      )
+    ) {
       return;
     }
 
     if (!hasAuth()) {
-      console.log('Login required to convert files');
+      console.log("Login required to convert files");
       return;
     }
 
     // Update button state during operation
-    const convertBtn = document.getElementById('convert-btn');
+    const convertBtn = document.getElementById("convert-btn");
     if (convertBtn) {
       convertBtn.disabled = true;
-      convertBtn.innerHTML = '⏳ Converting...';
-      convertBtn.style.opacity = '0.6';
+      convertBtn.innerHTML = "⏳ Converting...";
+      convertBtn.style.opacity = "0.6";
     }
 
     fetchWithFallback(`/csvdump`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('auth_token')
-      }
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + localStorage.getItem("auth_token"),
+      },
     })
-      .then(async res => {
+      .then(async (res) => {
         const data = await res.json();
         if (res.ok) {
-          console.log('Files converted successfully');
+          console.log("Files converted successfully");
           let msg = `✅ Success! Consolidated ${data.rows || 0} records.`;
           if (data.skipped_count) {
             msg += ` Skipped ${data.skipped_count} (missing DOB).`;
           }
           alert(msg);
         } else {
-          console.error('Conversion failed:', data.error);
-          alert('Failed to convert files: ' + (data.error || 'Unknown error'));
+          console.error("Conversion failed:", data.error);
+          alert("Failed to convert files: " + (data.error || "Unknown error"));
         }
       })
-      .catch(err => {
-        console.error('Conversion error:', err);
-        alert('Network error: Unable to convert files');
+      .catch((err) => {
+        console.error("Conversion error:", err);
+        alert("Network error: Unable to convert files");
       })
       .finally(() => {
         // Reset button state
         if (convertBtn) {
           convertBtn.disabled = false;
-          convertBtn.innerHTML = '🔄 Convert to CSV';
-          convertBtn.style.opacity = '1';
+          convertBtn.innerHTML = "🔄 Convert to CSV";
+          convertBtn.style.opacity = "1";
         }
       });
   };
@@ -536,23 +551,28 @@ document.addEventListener("DOMContentLoaded", () => {
   // (Re)usable multi-file upload handler (was missing causing uploads to fail)
   function handleMultipleUpload(files) {
     if (!hasAuth()) {
-      alert('Login required before uploading.');
+      alert("Login required before uploading.");
       return;
     }
     if (!files || files.length === 0) return;
 
     // Filter only valid Excel files
-    const excelFiles = files.filter(f => /\.xlsx?$/.test(f.name.toLowerCase()));
+    const excelFiles = files.filter((f) =>
+      /\.xlsx?$/.test(f.name.toLowerCase()),
+    );
     if (excelFiles.length === 0) {
-      alert('No valid .xls or .xlsx files selected.');
+      alert("No valid .xls or .xlsx files selected.");
       return;
     }
 
     // Simple inline progress feedback using the loading area if present
-    const loadingEl = document.getElementById('files-loading');
+    const loadingEl = document.getElementById("files-loading");
     if (loadingEl) {
-      loadingEl.style.display = 'flex';
-      loadingEl.innerHTML = '<span style="margin-right:8px">⬆️</span>Uploading ' + excelFiles.length + ' file(s)...';
+      loadingEl.style.display = "flex";
+      loadingEl.innerHTML =
+        '<span style="margin-right:8px">⬆️</span>Uploading ' +
+        excelFiles.length +
+        " file(s)...";
     }
 
     let succeeded = 0;
@@ -560,19 +580,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const uploadOne = async (file) => {
       const fd = new FormData();
-      fd.append('file', file, file.name);
+      fd.append("file", file, file.name);
       return fetchWithFallback(`/upload_excel`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
-        body: fd
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("auth_token"),
+        },
+        body: fd,
       })
-        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
         .then((result) => {
           if (result.ok) {
             succeeded++;
           } else {
             failed++;
-            console.error('Upload failed for', file.name, result.data && result.data.error);
+            console.error(
+              "Upload failed for",
+              file.name,
+              result.data && result.data.error,
+            );
           }
           if (loadingEl) {
             loadingEl.innerHTML = `<span style="margin-right:8px">⬆️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
@@ -580,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch((err) => {
           failed++;
-          console.error('Network/upload error for', file.name, err);
+          console.error("Network/upload error for", file.name, err);
           if (loadingEl) {
             loadingEl.innerHTML = `<span style=\"margin-right:8px\">⚠️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
           }
@@ -592,14 +618,20 @@ document.addEventListener("DOMContentLoaded", () => {
       loadCurrentFiles();
       if (loadingEl) {
         if (failed === 0) {
-          loadingEl.innerHTML = '<span style="margin-right:8px">✅</span>All files uploaded successfully';
-          setTimeout(() => { if (loadingEl.style.display !== 'none') loadingEl.style.display = 'none'; }, 1200);
+          loadingEl.innerHTML =
+            '<span style="margin-right:8px">✅</span>All files uploaded successfully';
+          setTimeout(() => {
+            if (loadingEl.style.display !== "none")
+              loadingEl.style.display = "none";
+          }, 1200);
         } else {
           loadingEl.innerHTML = `<span style="margin-right:8px">⚠️</span>${succeeded} succeeded, ${failed} failed`;
         }
       }
       if (failed > 0) {
-        alert(`${succeeded} file(s) uploaded successfully, ${failed} failed. Check console for errors.`);
+        alert(
+          `${succeeded} file(s) uploaded successfully, ${failed} failed. Check console for errors.`,
+        );
       }
     });
   }
@@ -616,52 +648,83 @@ document.addEventListener("DOMContentLoaded", () => {
     fileDialogOpen = true;
     uploadInput.click();
     // reset guard after a short delay (dialog is modal)
-    setTimeout(() => { fileDialogOpen = false; }, 600);
+    setTimeout(() => {
+      fileDialogOpen = false;
+    }, 600);
   }
 
   if (uploadBtn) {
-    uploadBtn.addEventListener('click', (e) => { e.preventDefault(); openFileDialog(); });
+    uploadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openFileDialog();
+    });
   }
 
   // Unified input & drop area/browse button
-  const hiddenMainInput = document.getElementById('upload-input'); // same element
-  const dropArea = document.getElementById('drop-area');
-  const browseBtn = document.getElementById('browse-btn');
+  const hiddenMainInput = document.getElementById("upload-input"); // same element
+  const dropArea = document.getElementById("drop-area");
+  const browseBtn = document.getElementById("browse-btn");
   if (hiddenMainInput) {
     // Ensure only ONE change handler processes uploads
-    hiddenMainInput.addEventListener('change', () => {
-      const files = Array.from(hiddenMainInput.files || []);
-      if (!files.length) return;
-      handleMultipleUpload(files);
-      // Clear input so selecting same file again re-triggers change
-      hiddenMainInput.value = '';
-    }, { once: false });
+    hiddenMainInput.addEventListener(
+      "change",
+      () => {
+        const files = Array.from(hiddenMainInput.files || []);
+        if (!files.length) return;
+        handleMultipleUpload(files);
+        // Clear input so selecting same file again re-triggers change
+        hiddenMainInput.value = "";
+      },
+      { once: false },
+    );
   }
   function triggerSelect(evt) {
     if (evt) evt.stopPropagation();
     if (!hasAuth()) {
-      alert('Login required to upload files');
+      alert("Login required to upload files");
       return;
     }
     openFileDialog();
   }
-  if (browseBtn) browseBtn.addEventListener('click', (e) => { e.stopPropagation(); triggerSelect(e); });
+  if (browseBtn)
+    browseBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      triggerSelect(e);
+    });
   if (dropArea) {
     // Only respond to Enter/Space key; avoid generic click to prevent double triggers
-    dropArea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
+    dropArea.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         triggerSelect(e);
       }
     });
-    ['dragenter','dragover'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); dropArea.classList.add('dragover');}));
-    ['dragleave','drop'].forEach(evt => dropArea.addEventListener(evt, (e)=>{e.preventDefault(); e.stopPropagation(); if(evt==='drop'){ const files=Array.from(e.dataTransfer.files||[]).filter(f=>/\.xlsx?$/.test(f.name.toLowerCase())); if(files.length) handleMultipleUpload(files);} dropArea.classList.remove('dragover');}));
+    ["dragenter", "dragover"].forEach((evt) =>
+      dropArea.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropArea.classList.add("dragover");
+      }),
+    );
+    ["dragleave", "drop"].forEach((evt) =>
+      dropArea.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (evt === "drop") {
+          const files = Array.from(e.dataTransfer.files || []).filter((f) =>
+            /\.xlsx?$/.test(f.name.toLowerCase()),
+          );
+          if (files.length) handleMultipleUpload(files);
+        }
+        dropArea.classList.remove("dragover");
+      }),
+    );
   }
 
   // Re-render files on theme toggle so inline dynamic colors update
-  const themeToggleBtn = document.getElementById('toggle-dark-mode');
+  const themeToggleBtn = document.getElementById("toggle-dark-mode");
   if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', () => {
+    themeToggleBtn.addEventListener("click", () => {
       // Slight delay to allow body.dark class to apply
       setTimeout(() => {
         if (window.__currentUploadFiles) {
