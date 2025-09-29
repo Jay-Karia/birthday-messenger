@@ -25,7 +25,6 @@ def send_email_with_image(
     body_text: str,
     image_path: str,
     recipient: str | None = None,
-    to: str | None = None,
     inline: bool = True,
     cc: list[str] | None = None,
 ):

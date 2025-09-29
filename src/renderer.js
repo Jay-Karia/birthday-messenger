@@ -396,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const token = getToken();
       if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
       try {
-        const res = await fetch('https://birthday-messenger.onrender.com/change_password', {
+        const res = await fetch(`${API_URL}/change_password`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
           body: JSON.stringify({ old_password, new_password })
