@@ -34,6 +34,8 @@ def send_email_with_image(
     msg["From"] = EMAIL_SENDER
     msg["To"] = recipient
     msg["Subject"] = subject
+
+    print(f"[INFO] Preparing email to {recipient} with subject '{subject}'")
     
     # Add CC recipients if provided
     if cc:
@@ -69,6 +71,8 @@ def send_email_with_image(
             msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=img_file.name)
 
     context = ssl._create_unverified_context()
+    print(EMAIL_SENDER)
+    print(EMAIL_PASSWORD)
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context, timeout=30) as smtp:
         smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
         smtp.send_message(msg)
