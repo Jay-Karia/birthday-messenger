@@ -1,7 +1,7 @@
 {
   "name": "birthday-messenger",
   "productName": "birthday-messenger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Send emails on birthdays.",
   "main": "src/index.js",
   "scripts": {
