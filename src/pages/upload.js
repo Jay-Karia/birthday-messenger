@@ -1,45 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // ------------------ Config & Helpers ------------------
-  const PRIMARY_API_PORT = 8000;
-  const FALLBACK_API_PORT = 5000; // try if primary fails
-  const API_BASE =
-    typeof API_URL !== "undefined" && API_URL
-      ? API_URL.replace(/\/$/, "")
-      : `http://localhost:${PRIMARY_API_PORT}`;
-
-  async function fetchWithFallback(path, options) {
-    const urlPrimary = `${API_BASE}${path}`;
-    try {
-      const res = await fetch(urlPrimary, options);
-      if (
-        !res.ok &&
-        res.status === 404 &&
-        API_BASE.includes(PRIMARY_API_PORT.toString())
-      ) {
-        // maybe running on fallback port instead
-        const fallbackUrl = `http://localhost:${FALLBACK_API_PORT}${path}`;
-        try {
-          const res2 = await fetch(fallbackUrl, options);
-          res2._usedFallback = true; // mark for debugging
-          return res2;
-        } catch {}
-      }
-      return res;
-    } catch (e) {
-      if (API_BASE.includes(PRIMARY_API_PORT.toString())) {
-        try {
-          return await fetch(
-            `http://localhost:${FALLBACK_API_PORT}${path}`,
-            options,
-          );
-        } catch (e2) {
-          throw e2;
-        }
-      }
-      throw e;
-    }
-  }
-
+  // Static API base (remote)
+  const API_BASE = 'https://birthday-messenger.onrender.com';
+  // const API_BASE = "http://localhost:8000";
   // Auth helper function
   function hasAuth() {
     const token = localStorage.getItem("auth_token");
@@ -80,8 +42,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    fetchWithFallback(`/list_files`, {
-      method: "GET",
+  fetch(`${API_BASE}/list_files`, {
+      method: 'GET',
       headers: {
         Authorization: "Bearer " + localStorage.getItem("auth_token"),
       },
@@ -182,8 +144,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function deleteFileInternal(filename, callback) {
-    fetchWithFallback(`/delete_xls`, {
-      method: "POST",
+  fetch(`${API_BASE}/delete_xls`, {
+      method: 'POST',
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -247,9 +209,9 @@ document.addEventListener("DOMContentLoaded", () => {
       <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">Uploading...</p>
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
-
-    fetchWithFallback(`/upload_excel`, {
-      method: "POST",
+    
+  fetch(`${API_BASE}/upload_excel`, {
+      method: 'POST',
       headers: {
         Authorization: "Bearer " + localStorage.getItem("auth_token"),
       },
@@ -352,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectBtn.disabled = true;
       selectBtn.style.opacity = "0.6";
 
-      fetchWithFallback(`/upload_excel`, {
+  fetch(`${API_BASE}/upload_excel`, {
         method: "POST",
         headers: {
           Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -459,8 +421,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteAllBtn.style.opacity = "0.6";
     }
 
-    fetchWithFallback(`/delete_all_xls`, {
-      method: "POST",
+  fetch(`${API_BASE}/delete_all_xls`, {
+      method: 'POST',
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -513,8 +475,8 @@ document.addEventListener("DOMContentLoaded", () => {
       convertBtn.style.opacity = "0.6";
     }
 
-    fetchWithFallback(`/csvdump`, {
-      method: "POST",
+  fetch(`${API_BASE}/csvdump`, {
+      method: 'POST',
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + localStorage.getItem("auth_token"),
@@ -580,13 +542,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const uploadOne = async (file) => {
       const fd = new FormData();
-      fd.append("file", file, file.name);
-      return fetchWithFallback(`/upload_excel`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("auth_token"),
-        },
-        body: fd,
+      fd.append('file', file, file.name);
+  return fetch(`${API_BASE}/upload_excel`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
+        body: fd
       })
         .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
         .then((result) => {
