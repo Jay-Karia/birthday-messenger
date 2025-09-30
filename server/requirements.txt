@@ -9,3 +9,4 @@ groq
 openpyxl
 pandas
 gunicorn
+certifi

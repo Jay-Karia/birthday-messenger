@@ -155,17 +155,6 @@ def _normalize_phone_generic(raw: str) -> str:
     return digits
 
 
-# Legacy function still used by /send_card payload generation (left intact)
-def _normalize_phone(val) -> str:
-    if val is None:
-        return ""
-    if isinstance(val, (int, float)):
-        try:
-            return str(int(val))
-        except Exception:
-            return str(val)
-    return str(val).strip()
-
 
 # ---------------------------------------------
 # Header-aware CSV field mapping infrastructure
