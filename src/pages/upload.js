@@ -455,14 +455,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Convert to CSV function
   window.convertToCSV = function () {
-    if (
-      !confirm(
-        "Convert all Excel files to a single CSV file? This will process all uploaded files.",
-      )
-    ) {
-      return;
-    }
-
     if (!hasAuth()) {
       console.log("Login required to convert files");
       return;
