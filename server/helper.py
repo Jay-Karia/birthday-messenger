@@ -71,7 +71,7 @@ def send_email_with_image(
 
     context = ssl._create_unverified_context()
     
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context, timeout=300) as smtp:
+    with smtplib.SMTP_SSL('smtp.gmail.com', 587, context=context, timeout=60) as smtp:
         smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
         smtp.send_message(msg)
     print("[SUCCESS] Email with image sent to", recipient, f"(inline={inline})")
