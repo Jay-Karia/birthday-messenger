@@ -70,18 +70,8 @@ def send_email_with_image(
             msg.add_attachment(data, maintype=maintype, subtype=subtype, filename=img_file.name)
 
     context = ssl._create_unverified_context()
-    print(EMAIL_SENDER)
-    print(EMAIL_PASSWORD)
+    
     with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=context, timeout=30) as smtp:
         smtp.login(EMAIL_SENDER, EMAIL_PASSWORD)
         smtp.send_message(msg)
     print("[SUCCESS] Email with image sent to", recipient, f"(inline={inline})")
-
-# if __name__ == "__main__":
-#     # Example inline image email (update image filename if needed)
-#     send_email_with_image(
-#         subject="Inline Image Test",
-#         body_text="Here is an inline image.",
-#         image_path="birthday_card_custom.png",
-#         inline=True,
-#     )
