@@ -400,13 +400,11 @@ def send_email():
             
         print("[INFO] Generating message via AI...")
 
-        # try:
-        #     message = asyncio.run(text_gen(name))
-        # except Exception as e:
-        #     results.append({"status": 500, "error": f"AI text generation failed: {e}"})
-        #     continue
-
-        message = "This is a test message"
+        try:
+            message = asyncio.run(text_gen(name))
+        except Exception as e:
+            results.append({"status": 500, "error": f"AI text generation failed: {e}"})
+            continue
 
         try:
             card_path = create_birthday_card(name)
