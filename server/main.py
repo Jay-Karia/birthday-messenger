@@ -59,7 +59,7 @@ def _persist_password(new_pass: str):
 
 # --- SendGrid / paths ---
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-FROM_EMAIL = os.getenv("FROM_EMAIL", "devtest10292025@outlook.com")
+FROM_EMAIL = os.getenv("EMAIL_SENDER", "devtest10292025@outlook.com")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CARD_TEMPLATE = os.path.join(BASE_DIR, "components", "card.png")
@@ -348,9 +348,9 @@ def filter_birthdays():
 
 @app.route("/send_card", methods=["POST"])
 def send_email():
-    auth_error = require_auth()
-    if auth_error:
-        return auth_error
+    # auth_error = require_auth()
+    # if auth_error:
+    #     return auth_error
 
     datas = request.json
     if not datas:
@@ -387,20 +387,26 @@ def send_email():
                     core = re.sub(r'\.+$', '', p)
                     fixed.append(core.capitalize())
             name = " ".join(fixed).replace('. .', '.')
+
         subject = entry.get("subject", f"Happy Birthday, {name} 🎂")
 
         parent_email = entry.get("parent_email")
 
+        print("[INFO] Preparing to send birthday card emails...")
         # Prepare CC list for parent email
         cc_recipients = []
         if parent_email:
             cc_recipients.append(parent_email)
+            
+        print("[INFO] Generating message via AI...")
 
-        try:
-            message = asyncio.run(text_gen(name))
-        except Exception as e:
-            results.append({"status": 500, "error": f"AI text generation failed: {e}"})
-            continue
+        # try:
+        #     message = asyncio.run(text_gen(name))
+        # except Exception as e:
+        #     results.append({"status": 500, "error": f"AI text generation failed: {e}"})
+        #     continue
+
+        message = "This is a test message"
 
         try:
             card_path = create_birthday_card(name)
@@ -416,15 +422,17 @@ def send_email():
             continue
 
         # Send single email to student with parent in CC
+        print("[INFO] Preparing to send email...")
         try:
             send_email_with_image(
-                subject=f"Happy Birthday, {name}!! Wishes from SRM Institute of Science and Technology, Trichy",
-                body_text=message,
-                recipient=recipient,
-                image_path=card_path,
-                inline=True,
-                cc=cc_recipients,
+            subject=subject,
+            body_text=message,
+            recipient=recipient,
+            image_path=card_path,
+            inline=True,
+            cc=cc_recipients,
             )
+            results.append({"status": 200, "message": f"Email sent to {recipient}"})
         except Exception as e:
             results.append({"status": 500, "error": f"Email send failed: {e}"})
 

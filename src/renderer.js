@@ -3,8 +3,8 @@ const AUTH_CACHE_KEY = "auth_cache";
 const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
-const API_URL = "https://birthday-messenger.onrender.com";
-// const API_URL = "http://localhost:8000";
+// const API_URL = "https://birthday-messenger.onrender.com";
+const API_URL = "http://localhost:8000";
 
 // ---------- State (Results Cache) ----------
 let lastResultsPeople = [];
