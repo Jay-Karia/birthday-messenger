@@ -398,6 +398,9 @@ def send_email():
         if parent_email:
             cc_recipients.append(parent_email)
             
+        # Send CC to hod
+        cc_recipients.append("hod.cse@ist.srmtrichy.edu.in")
+            
         print("[INFO] Generating message via AI...")
 
         try:
