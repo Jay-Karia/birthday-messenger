@@ -403,11 +403,19 @@ def send_email():
             
         print("[INFO] Generating message via AI...")
 
-        try:
-            message = asyncio.run(text_gen(name))
-        except Exception as e:
-            results.append({"status": 500, "error": f"AI text generation failed: {e}"})
-            continue
+        message = f"""
+        Dear, {name}
+
+        On behalf of the Computer Science and Engineering Department at SRM Institute of Science and Technology, Tiruchirappalli, I would like to wish you a very happy birthday. I wish you good health, happiness, and continued success in your academic pursuits.
+        
+        Warm Regards,
+        
+        Dr. Kanaga Suba Raja
+        
+        Head of the Department, Computer Science and Engineering
+        
+        SRM Institute of Science and Technology, Tiruchirappalli
+        """
 
         try:
             card_path = create_birthday_card(name)
