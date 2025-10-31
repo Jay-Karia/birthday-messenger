@@ -6,7 +6,9 @@ import base64
 import secrets
 import asyncio
 import json
-from datetime import datetime, date
+import threading
+import time
+from datetime import datetime, date, timedelta
 from typing import Optional
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -665,9 +667,141 @@ def server_error(e):
     return jsonify({"error": f"Server error: {e}"}), 500
 
 
+# --- Threading Functions ---
+def automated_birthday_sender():
+    """Automated task to send birthday emails at 9 AM every day"""
+    print("[Birthday Sender] Automated birthday sender thread started")
+    
+    while True:
+        now = datetime.now()
+        target_time = now.replace(hour=9, minute=0, second=0, microsecond=0)
+        
+        # If it's already past 9 AM today, schedule for tomorrow
+        if now >= target_time:
+            target_time = target_time + timedelta(days=1)
+        
+        # Calculate seconds until next 9 AM
+        sleep_seconds = (target_time - now).total_seconds()
+        print(f"[Birthday Sender] Next run scheduled at {target_time.strftime('%Y-%m-%d %H:%M:%S')} (in {sleep_seconds/3600:.2f} hours)")
+        
+        # Sleep until 9 AM
+        time.sleep(sleep_seconds)
+        
+        # Now it's 9 AM, send birthday emails
+        print(f"[Birthday Sender] Running birthday email task at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        
+        try:
+            # Get today's date in MM-DD format
+            today = datetime.now()
+            month_day = today.strftime("%m-%d")
+            
+            # Find people with birthdays today
+            matches = read_csv_matches(month_day)
+            
+            if not matches:
+                print(f"[Birthday Sender] No birthdays found for {today.strftime('%B %d, %Y')}")
+                continue
+            
+            print(f"[Birthday Sender] Found {len(matches)} birthday(s) for {today.strftime('%B %d, %Y')}")
+            
+            # Send emails to each person
+            for person in matches:
+                try:
+                    recipient = person.get("email")
+                    if not recipient:
+                        print(f"[Birthday Sender] Skipping {person.get('name', 'Unknown')} - no email address")
+                        continue
+                    
+                    name = person.get("name", "Friend")
+                    
+                    # Format name if it's all caps
+                    if isinstance(name, str) and name.strip() and name.upper() == name:
+                        raw = name.strip()
+                        raw = re.sub(r'\.{2,}', '.', raw)
+                        parts = raw.split()
+                        fixed = []
+                        for p in parts:
+                            if re.fullmatch(r'[A-Z]\.?', p):
+                                fixed.append(p[0].upper() + '.')
+                            else:
+                                core = re.sub(r'\.+$', '', p)
+                                fixed.append(core.capitalize())
+                        name = " ".join(fixed).replace('. .', '.')
+                    
+                    subject = f"Happy Birthday, {name} 🎂"
+                    parent_email = person.get("parent_email")
+                    
+                    # Prepare CC list
+                    cc_recipients = []
+                    if parent_email:
+                        cc_recipients.append(parent_email)
+                    cc_recipients.append("hod.cse@ist.srmtrichy.edu.in")
+                    
+                    message = f"""
+        Dear, {name}
+
+        On behalf of the Computer Science and Engineering Department at SRM Institute of Science and Technology, Tiruchirappalli, I would like to wish you a very happy birthday. I wish you good health, happiness, and continued success in your academic pursuits.
+        
+        Warm Regards,
+        
+        Dr. Kanaga Suba Raja
+        
+        Head of the Department, Computer Science and Engineering
+        
+        SRM Institute of Science and Technology, Tiruchirappalli
+        """
+                    
+                    # Create birthday card
+                    card_path = create_birthday_card(name)
+                    
+                    # Send email
+                    send_email_with_image(
+                        subject=subject,
+                        body_text=message,
+                        recipient=recipient,
+                        image_path=card_path,
+                        inline=True,
+                        cc=cc_recipients,
+                    
+                    )
+                    
+                    print(f"[Birthday Sender] ✓ Sent birthday email to {name} ({recipient})")
+                    
+                    # Small delay between emails to avoid rate limits
+                    time.sleep(2)
+                    
+                except Exception as e:
+                    print(f"[Birthday Sender] ✗ Failed to send email to {person.get('name', 'Unknown')}: {e}")
+            
+            print(f"[Birthday Sender] Completed sending {len(matches)} birthday email(s)")
+            
+        except Exception as e:
+            print(f"[Birthday Sender] Error in automated task: {e}")
+
+
+def run_flask_server():
+    """Run the Flask server in a separate thread"""
+    port = int(os.getenv("PORT", "5000"))
+    print(f"[Flask Server] Starting on port {port}")
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+
+
 if __name__ == "__main__":
-    # Default port changed earlier in Electron fetches to 8000; keep 5000 if you run separately
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
+    # Create thread for automated birthday email sender (runs at 9 AM daily)
+    birthday_thread = threading.Thread(target=automated_birthday_sender, daemon=True, name="BirthdaySenderThread")
+    birthday_thread.start()
+    print("[Main] Automated birthday sender thread started")
+    
+    # Create thread for Flask server
+    flask_thread = threading.Thread(target=run_flask_server, daemon=False, name="FlaskServerThread")
+    flask_thread.start()
+    print("[Main] Flask server thread started")
+    
+    # Keep main thread alive
+    try:
+        flask_thread.join()
+    except KeyboardInterrupt:
+        print("\n[Main] Shutting down...")
 
 
 # create_birthday_card("S. Shaun Benedict")
