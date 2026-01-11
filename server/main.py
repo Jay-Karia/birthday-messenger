@@ -59,8 +59,7 @@ def _persist_password(new_pass: str):
         # Non-fatal; log or ignore in minimal implementation
         print("[WARN] Failed to persist new password")
 
-# --- SendGrid / paths ---
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+# --- Email / paths ---
 FROM_EMAIL = os.getenv("EMAIL_SENDER", "devtest10292025@outlook.com")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

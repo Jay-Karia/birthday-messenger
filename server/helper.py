@@ -1,13 +1,13 @@
 import os
 import base64
 import mimetypes
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (
-    Mail, Attachment, FileContent, FileName, 
-    FileType, Disposition, ContentId
-)
 
 dotenv_path = find_dotenv()
 print(f"[DEBUG] Loading .env from: {dotenv_path}")
@@ -16,7 +16,7 @@ load_dotenv(dotenv_path=dotenv_path, override=True)
 
 
 def validate_env():
-    missing = [k for k in ["SENDGRID_API_KEY", "EMAIL_SENDER"] if not os.environ.get(k)]
+    missing = [k for k in ["EMAIL_SENDER", "EMAIL_PASSWORD"] if not os.environ.get(k)]
     if missing:
         raise RuntimeError(f"Missing env vars: {', '.join(missing)}")
 
@@ -30,7 +30,7 @@ def send_email_with_image(
     cc: list[str] | None = None,
 ):
     """
-    Send an email with an optional image using SendGrid.
+    Send an email with an optional image using SMTP.
     
     Args:
         subject: Email subject line
@@ -47,7 +47,7 @@ def send_email_with_image(
         validate_env()
 
         EMAIL_SENDER = os.environ.get("EMAIL_SENDER")
-        SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+        EMAIL_PASSWORD = os.environ.get("EMAIL_PASSWORD")
 
         if not recipient:
             raise ValueError("Recipient email address is required")
@@ -59,6 +59,14 @@ def send_email_with_image(
         if not img_file.exists():
             print(f"[WARN] Image not found at {image_path}; sending without image.")
             inline = False
+
+        # Create multipart message
+        message = MIMEMultipart('related')
+        message['From'] = EMAIL_SENDER
+        message['To'] = recipient
+        if cc:
+            message['Cc'] = ', '.join(cc)
+        message['Subject'] = subject
 
         # Create HTML content
         if inline and img_file.exists():
@@ -82,57 +90,60 @@ def send_email_with_image(
             </html>
             """
 
-        # Create message
-        message = Mail(
-            from_email=EMAIL_SENDER,
-            to_emails=recipient,
-            subject=subject,
-            html_content=html_content
-        )
-
-        # Add CC if provided
-        if cc:
-            message.cc = cc
+        # Attach HTML content
+        message.attach(MIMEText(html_content, 'html'))
 
         # Add image attachment
         if img_file.exists():
-            with open(img_file, 'rb') as f:
-                data = f.read()
+            with open(img_file, 'rb') as attachment:
+                # Guess MIME type
+                mime_type, _ = mimetypes.guess_type(img_file.name)
+                if not mime_type:
+                    mime_type = "application/octet-stream"
 
-            encoded_file = base64.b64encode(data).decode()
+                maintype, subtype = mime_type.split('/', 1)
+                part = MIMEBase(maintype, subtype)
+                part.set_payload(attachment.read())
+                encoders.encode_base64(part)
 
-            # Guess MIME type
-            mime_type, _ = mimetypes.guess_type(img_file.name)
-            if not mime_type:
-                mime_type = "application/octet-stream"
+                if inline:
+                    # Inline attachment with Content ID
+                    part.add_header('Content-Disposition', 'inline', filename=img_file.name)
+                    part.add_header('Content-ID', '<inline-image>')
+                else:
+                    # Regular attachment
+                    part.add_header('Content-Disposition', 'attachment', filename=img_file.name)
 
-            attachment = Attachment()
-            attachment.file_content = FileContent(encoded_file)
-            attachment.file_name = FileName(img_file.name)
-            attachment.file_type = FileType(mime_type)
-
-            if inline:
-                # Inline attachment with Content ID
-                attachment.disposition = Disposition('inline')
-                attachment.content_id = ContentId(cid)
-            else:
-                # Regular attachment
-                attachment.disposition = Disposition('attachment')
-
-            message.attachment = attachment
+                message.attach(part)
 
         # Send email
-        print("[INFO] Sending email via SendGrid...")
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
+        print("[INFO] Sending email via SMTP...")
+        
+        # Determine SMTP server based on email domain
+        if EMAIL_SENDER.endswith('@outlook.com') or EMAIL_SENDER.endswith('@hotmail.com'):
+            smtp_server = "smtp-mail.outlook.com"
+            smtp_port = 587
+        elif EMAIL_SENDER.endswith('@gmail.com'):
+            smtp_server = "smtp.gmail.com"
+            smtp_port = 587
+        else:
+            # Default to generic SMTP
+            smtp_server = "smtp.gmail.com"
+            smtp_port = 587
 
-        print(f"[SUCCESS] Email sent! Status code: {response.status_code}")
-        print(f"[SUCCESS] Email with image sent to {recipient} (inline={inline})")
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+            cc_list = cc if cc else []
+            to_list = [recipient] + cc_list
+            server.sendmail(EMAIL_SENDER, to_list, message.as_string())
+
+        print(f"[SUCCESS] Email sent to {recipient} (inline={inline})")
 
         return {
             "status": "success",
             "message": "Email sent successfully",
-            "status_code": response.status_code
+            "status_code": 200
         }
 
     except FileNotFoundError as e:
@@ -146,7 +157,7 @@ def send_email_with_image(
         return {"status": "error", "error": error_msg}
 
     except Exception as e:
-        error_msg = f"SendGrid error: {str(e)}"
+        error_msg = f"SMTP error: {str(e)}"
         print(f"[ERROR] {error_msg}")
-        print("[TIP] Check your SENDGRID_API_KEY and make sure sender email is verified")
+        print("[TIP] Check your EMAIL_SENDER and EMAIL_PASSWORD, and ensure the account allows SMTP access")
         return {"status": "error", "error": error_msg}
