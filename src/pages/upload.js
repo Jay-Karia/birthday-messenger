@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Static API base (remote)
   // const API_BASE = 'https://birthday-messenger.onrender.com';
-  const API_BASE = "http://localhost:8000";
+  const API_BASE = "https://birthday-messenger.vercel.app/";
 
   // Auth helper function
   function hasAuth() {
@@ -196,21 +196,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const originalHTML = slot.innerHTML;
     slot.innerHTML = `
       <div style="
-        display: inline-flex; 
-        align-items: center; 
-        justify-content: center; 
-        width: 40px; 
-        height: 40px; 
-        background: linear-gradient(135deg, #6b7280, #4b5563); 
-        color: white; 
-        border-radius: 10px; 
-        font-size: 16px; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #6b7280, #4b5563);
+        color: white;
+        border-radius: 10px;
+        font-size: 16px;
         margin-bottom: 8px;
       ">⏳</div>
       <p style="margin: 0; font-size: 14px; font-weight: 600; color: #374151">Uploading...</p>
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
-    
+
   fetch(`${API_BASE}/upload_excel`, {
       method: 'POST',
       headers: {
