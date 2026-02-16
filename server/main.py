@@ -268,6 +268,11 @@ def read_csv_matches(month_day: str) -> list[dict]:
 # Routes
 # --------------------------------------------------------------------------------------
 
+@app.route("/", methods=["GET"])
+def home():
+    return "Hello World", 200
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok"}), 200
