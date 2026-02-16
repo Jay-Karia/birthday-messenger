@@ -599,11 +599,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!uploadInput) return;
     if (fileDialogOpen) return;
     fileDialogOpen = true;
-    uploadInput.click();
-    // reset guard after a short delay (dialog is modal)
-    setTimeout(() => {
+    const resetGuard = () => {
       fileDialogOpen = false;
-    }, 600);
+    };
+    // reset guard when dialog closes (window regains focus)
+    window.addEventListener("focus", resetGuard, { once: true });
+    uploadInput.click();
+    // fallback reset in case focus event doesn't fire
+    setTimeout(resetGuard, 2000);
   }
 
   if (uploadBtn) {

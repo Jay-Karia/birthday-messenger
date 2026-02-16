@@ -1,6 +1,11 @@
 const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require("electron");
 const path = require("node:path");
 
+// Linux: prefer xdg-desktop-portal file dialogs to avoid GTK handler warnings
+if (process.platform === "linux") {
+  process.env.GTK_USE_PORTAL = "1";
+}
+
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
