@@ -17,19 +17,60 @@ function initializeFirebase() {
   return true;
 }
 
-// Map Excel columns to Firestore fields
-function parseExcelRow(row) {
+// Normalize header text
+function normalizeHeader(value) {
+  if (value == null) return "";
+  return String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\./g, "");
+}
+
+const HEADER_ALIASES = {
+  register_no: ["register no", "registe no", "register no"],
+  student_name: ["student name"],
+  dob: ["dob", "d o b", "date of birth"],
+  father_name: ["father name"],
+  mother_name: ["mother name"],
+  parent_contact: ["parent contact no", "parent contact"],
+  student_contact: ["student contact no", "student contact"],
+  parent_whatsapp: ["parent whatsapp no", "parent whatsapp"],
+  student_whatsapp: ["student whatsapp no", "student whatsapp"],
+  parent_email: ["parent email"],
+  student_email: ["student email"],
+};
+
+function mapHeaders(headerRow) {
+  const headerMap = {};
+  const normalized = headerRow.map((h) => normalizeHeader(h));
+  Object.entries(HEADER_ALIASES).forEach(([key, aliases]) => {
+    const idx = normalized.findIndex((h) => aliases.includes(h));
+    if (idx >= 0) headerMap[key] = idx;
+  });
+  return headerMap;
+}
+
+function parseExcelRow(row, headerMap) {
+  const get = (key) => {
+    const idx = headerMap[key];
+    if (idx == null) return "";
+    const val = row[idx];
+    return val == null ? "" : String(val).trim();
+  };
+
   return {
-    register_no: row['Register No.'] || row['Registe No.'] || '',
-    student_name: row['Student Name'] || '',
-    dob: row['D.O.B'] || row['DOB'] || '',
-    father_name: row['Father Name'] || '',
-    mother_name: row['Mother Name'] || '',
-    parent_contact: row['Parent Contact No'] || row['Parent Contact No.'] || '',
-    student_contact: row['Student Contact No'] || row['Student Contact No.'] || '',
-    parent_whatsapp: row['Parent Whatsapp No'] || row['Parent Whatsapp No.'] || '',
-    parent_email: row['Parent email'] || '',
-    student_email: row['Student email'] || ''
+    register_no: get("register_no"),
+    student_name: get("student_name"),
+    dob: get("dob"),
+    father_name: get("father_name"),
+    mother_name: get("mother_name"),
+    parent_contact: get("parent_contact"),
+    student_contact: get("student_contact"),
+    parent_whatsapp: get("parent_whatsapp"),
+    student_whatsapp: get("student_whatsapp"),
+    parent_email: get("parent_email"),
+    student_email: get("student_email"),
   };
 }
 
@@ -47,14 +88,30 @@ function parseExcelFile(file) {
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
 
-        // Convert to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        // Read raw rows
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
+        if (!rows || rows.length === 0) {
+          resolve([]);
+          return;
+        }
 
-        // Map to Firestore format
-        const students = jsonData.map(parseExcelRow).filter(student => {
-          // Filter out empty rows
-          return student.register_no || student.student_name;
-        });
+        // Find header row (the row containing Register No. / Student Name)
+        let headerRowIndex = 0;
+        for (let i = 0; i < Math.min(rows.length, 5); i++) {
+          const normalized = rows[i].map((h) => normalizeHeader(h));
+          if (normalized.includes("register no") || normalized.includes("student name")) {
+            headerRowIndex = i;
+            break;
+          }
+        }
+
+        const headerRow = rows[headerRowIndex] || [];
+        const headerMap = mapHeaders(headerRow);
+
+        const dataRows = rows.slice(headerRowIndex + 1);
+        const students = dataRows
+          .map((row) => parseExcelRow(row, headerMap))
+          .filter((student) => student.register_no || student.student_name);
 
         resolve(students);
       } catch (error) {
@@ -122,6 +179,35 @@ async function uploadStudentsToFirestore(students, onProgress) {
   return results;
 }
 
+// Delete all students from Firestore (batched)
+async function deleteAllStudentsFromFirestore(onProgress) {
+  if (!db) {
+    if (!initializeFirebase()) {
+      throw new Error("Failed to initialize Firebase");
+    }
+  }
+
+  const studentsCollection = db.collection("students");
+  const snapshot = await studentsCollection.get();
+  const total = snapshot.size;
+  let processed = 0;
+
+  const chunkSize = 400;
+  const docs = snapshot.docs;
+  for (let i = 0; i < docs.length; i += chunkSize) {
+    const batch = db.batch();
+    const chunk = docs.slice(i, i + chunkSize);
+    chunk.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    processed += chunk.length;
+    if (onProgress) {
+      onProgress({ processed, total });
+    }
+  }
+
+  return { deleted: processed };
+}
+
 // Main function to handle Excel upload
 window.handleExcelUploadToFirestore = async function(file, onProgress, onComplete) {
   try {
@@ -169,3 +255,4 @@ window.handleExcelUploadToFirestore = async function(file, onProgress, onComplet
 
 // Export for use
 window.initializeFirebase = initializeFirebase;
+window.deleteAllStudentsFromFirestore = deleteAllStudentsFromFirestore;

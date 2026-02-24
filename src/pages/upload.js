@@ -1,38 +1,28 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // API base resolution (local by default for Electron/file://)
-  const DEFAULT_API_BASE = "https://birthday-messenger.vercel.app";
-  const REMOTE_API_BASE = "https://birthday-messenger.vercel.app";
-  const resolveApiBase = () => {
-    const stored = localStorage.getItem("api_base");
-    if (stored) return stored.replace(/\/+$/, "");
-    const params = new URLSearchParams(window.location.search);
-    const fromQuery = params.get("api");
-    if (fromQuery) return fromQuery.replace(/\/+$/, "");
-    if (window.location && window.location.protocol === "file:") {
-      return DEFAULT_API_BASE;
-    }
-    return REMOTE_API_BASE;
-  };
-  const API_BASE = resolveApiBase();
-
-  // Auth helper function
+  // Auth helper function (Firebase Auth)
+  const HOD_EMAIL = "hod.cse.srmtrichy@gmail.com";
   function hasAuth() {
-    const token = localStorage.getItem("auth_token");
-    const cache = localStorage.getItem("auth_cache");
-    if (!token || !cache) return false;
-    try {
-      const { expires } = JSON.parse(cache);
-      return Date.now() < expires;
-    } catch {
-      return false;
-    }
+    if (!window.firebase) return false;
+    const auth = firebase.auth();
+    const user = auth.currentUser;
+    return !!user && user.email === HOD_EMAIL;
   }
 
-  // Load current files on page load
-  loadCurrentFiles();
+  // Local storage for uploaded files (since we're uploading directly to Firestore)
+  let localUploadedFiles = [];
 
   // Expose loadCurrentFiles globally so it can be called after login
   window.reloadUploadFiles = loadCurrentFiles;
+
+  // Listen for auth state changes to load files when authenticated
+  if (window.firebase) {
+    firebase.auth().onAuthStateChanged(() => {
+      loadCurrentFiles();
+    });
+  } else {
+    // Fallback: load immediately if firebase not ready
+    loadCurrentFiles();
+  }
 
   // Function to load and display current files
   function loadCurrentFiles() {
@@ -58,43 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-  fetch(`${API_BASE}/list_files`, {
-      method: 'GET',
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("auth_token"),
-      },
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        loadingEl.style.display = "none";
+    // Display locally uploaded files
+    loadingEl.style.display = "none";
 
-        if (res.ok && data.files && data.files.length > 0) {
-          displayFiles(data.files);
-          listEl.style.display = "block";
-          // Always show the upload interface
-          noFilesEl.style.display = "block";
-        } else {
-          listEl.style.display = "none";
-          noFilesEl.style.display = "block";
-          if (fileCountEl) fileCountEl.textContent = "0 files";
-          if (deleteAllBtn) deleteAllBtn.style.display = "none";
-          if (convertBtn) convertBtn.style.display = "none";
-        }
-      })
-      .catch((err) => {
-        console.error("Error loading files:", err);
-        loadingEl.style.display = "none";
-        listEl.style.display = "none";
-        noFilesEl.style.display = "block";
-        if (fileCountEl) fileCountEl.textContent = "0 files";
-        if (deleteAllBtn) deleteAllBtn.style.display = "none";
-        if (convertBtn) convertBtn.style.display = "none";
-        noFilesEl.innerHTML = `
-          <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.5">⚠️</div>
-          <p style="margin: 0; font-size: 16px; color: #374151">Error loading files</p>
-          <p style="margin: 4px 0 0; font-size: 14px; opacity: 0.7">Please try refreshing the page</p>
-        `;
-      });
+    if (localUploadedFiles.length > 0) {
+      displayFiles(localUploadedFiles);
+      listEl.style.display = "block";
+      noFilesEl.style.display = "block";
+    } else {
+      listEl.style.display = "none";
+      noFilesEl.style.display = "block";
+      if (fileCountEl) fileCountEl.textContent = "0 files";
+      if (deleteAllBtn) deleteAllBtn.style.display = "none";
+      if (convertBtn) convertBtn.style.display = "none";
+    }
   }
 
   // Function to display files list
@@ -119,25 +86,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Always show the quick upload interface, even when files exist
     const noFilesEl = document.getElementById("no-files");
-    noFilesEl.style.display = "block";
+    if (noFilesEl) {
+      noFilesEl.style.display = "block";
 
-    // Update the header text when files exist
-    const headerText = noFilesEl.querySelector("p");
-    if (headerText && files.length > 0) {
-      headerText.textContent = `${files.length} file(s) uploaded`;
+      // Update the header text when files exist
+      const headerText = noFilesEl.querySelector("p");
+      if (headerText && files.length > 0) {
+        headerText.textContent = `${files.length} file(s) ready for Firestore upload`;
+      }
     }
 
     const dark = document.body.classList.contains("dark");
     listEl.innerHTML = files
       .map((file) => {
-        const date = new Date(file.uploaded_at);
+        const date = file.uploaded_at ? new Date(file.uploaded_at) : new Date();
+        const sizeMB = file.size_mb || (file.size ? (file.size / (1024 * 1024)).toFixed(2) : '0.00');
         return `
         <div class="file-item">
           <div class="file-item__top">
-            <p class="file-item__name" title="${file.filename}">${file.filename}</p>
+            <p class="file-item__name" title="${file.filename || file.name}">${file.filename || file.name}</p>
           </div>
           <div class="file-item__meta">
-            <span class="file-pill">${file.size_mb} MB</span>
+            <span class="file-pill">${sizeMB} MB</span>
             <span>${date.toLocaleDateString()}</span>
             <span>${date.toLocaleTimeString()}</span>
           </div>
@@ -160,25 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function deleteFileInternal(filename, callback) {
-  fetch(`${API_BASE}/delete_xls`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + localStorage.getItem("auth_token"),
-      },
-      body: JSON.stringify({ filename }),
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok) {
-          if (callback) callback();
-        } else {
-          console.error("Delete failed:", data.error);
-        }
-      })
-      .catch((err) => {
-        console.error("Delete error:", err);
-      });
+    localUploadedFiles = localUploadedFiles.filter(
+      (file) => (file.filename || file.name) !== filename,
+    );
+    if (callback) callback();
   }
 
   // Quick upload functions for the no-files section
@@ -196,15 +151,6 @@ document.addEventListener("DOMContentLoaded", () => {
   window.handleQuickUpload = function (year, inputElement) {
     const file = inputElement.files[0];
     if (!file) return;
-
-    if (!hasAuth()) {
-      console.log("Login required to upload");
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append("file", file, file.name);
-    fd.append("year", year);
 
     // Find the corresponding slot and update its appearance during upload
     const slot = inputElement.parentElement;
@@ -226,34 +172,24 @@ document.addEventListener("DOMContentLoaded", () => {
       <p style="margin: 4px 0 0; font-size: 12px; opacity: 0.6">${file.name}</p>
     `;
 
-  fetch(`${API_BASE}/upload_excel`, {
-      method: 'POST',
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("auth_token"),
-      },
-      body: fd,
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok) {
-          // Reset the slot to original state
-          slot.innerHTML = originalHTML;
-          // Clear the input
-          const newInput = slot.querySelector('input[type="file"]');
-          if (newInput) newInput.value = "";
-          // Refresh the current files list
-          loadCurrentFiles();
-        } else {
-          // Reset the slot and show error briefly
-          slot.innerHTML = originalHTML;
-          console.error("Upload failed:", data.error);
-        }
-      })
-      .catch((err) => {
-        console.error("Quick upload error:", err);
-        // Reset the slot
-        slot.innerHTML = originalHTML;
-      });
+    const fileInfo = {
+      filename: file.name,
+      name: file.name,
+      size: file.size,
+      size_mb: (file.size / (1024 * 1024)).toFixed(2),
+      uploaded_at: new Date().toISOString(),
+      fileObject: file,
+      year,
+    };
+    localUploadedFiles.push(fileInfo);
+
+    // Reset the slot to original state
+    slot.innerHTML = originalHTML;
+    // Clear the input
+    const newInput = slot.querySelector('input[type="file"]');
+    if (newInput) newInput.value = "";
+    // Refresh the current files list
+    loadCurrentFiles();
   };
 
   // Generic file upload handler
@@ -266,11 +202,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!selectBtn || !uploadBtn || !input || !label || !statusEl) return;
 
-    // Check auth on page load
-    if (!hasAuth()) {
-      statusEl.style.color = "#ef4444";
-      statusEl.textContent = "🔒 Login required to upload";
-    }
+    // No server auth required
+    statusEl.textContent = "";
 
     // File selection
     selectBtn.addEventListener("click", () => input.click());
@@ -298,13 +231,10 @@ document.addEventListener("DOMContentLoaded", () => {
         uploadBtn.style.opacity = "0.6";
       } else {
         statusEl.textContent = "";
-        const isAuthed = hasAuth();
-        uploadBtn.disabled = !isAuthed;
-        uploadBtn.style.opacity = isAuthed ? "1" : "0.6";
-        if (isAuthed) {
-          statusEl.style.color = "#10b981";
-          statusEl.textContent = "✅ Ready to upload";
-        }
+        uploadBtn.disabled = false;
+        uploadBtn.style.opacity = "1";
+        statusEl.style.color = "#10b981";
+        statusEl.textContent = "✅ Ready to upload";
       }
     });
 
@@ -312,17 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
     uploadBtn.addEventListener("click", () => {
       if (!input.files || !input.files[0]) return;
 
-      if (!hasAuth()) {
-        statusEl.style.color = "#ef4444";
-        statusEl.textContent = "🔒 Login required";
-        return;
-      }
-
       const file = input.files[0];
-      const fd = new FormData();
-      fd.append("file", file, file.name);
-      fd.append("year", year); // Add year information
-
       statusEl.style.color = "#3b82f6";
       statusEl.textContent = "🚀 Uploading...";
       uploadBtn.disabled = true;
@@ -330,47 +250,30 @@ document.addEventListener("DOMContentLoaded", () => {
       selectBtn.disabled = true;
       selectBtn.style.opacity = "0.6";
 
-  fetch(`${API_BASE}/upload_excel`, {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("auth_token"),
-        },
-        body: fd,
-      })
-        .then(async (res) => {
-          let data;
-          try {
-            data = await res.json();
-          } catch {
-            data = {};
-          }
+      const fileInfo = {
+        filename: file.name,
+        name: file.name,
+        size: file.size,
+        size_mb: (file.size / (1024 * 1024)).toFixed(2),
+        uploaded_at: new Date().toISOString(),
+        fileObject: file,
+        year,
+      };
+      localUploadedFiles.push(fileInfo);
 
-          if (res.ok) {
-            statusEl.style.color = "#10b981";
-            statusEl.textContent = `🎉 ${year.charAt(0).toUpperCase() + year.slice(1)} year upload successful!`;
-            // Clear the file input after successful upload
-            input.value = "";
-            label.textContent = "No file selected";
-            // Refresh the current files list
-            loadCurrentFiles();
-          } else {
-            statusEl.style.color = "#ef4444";
-            statusEl.textContent = `❌ ${data.error || "Upload failed"}`;
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          statusEl.style.color = "#ef4444";
-          statusEl.textContent = "🌐 Network error - please try again";
-        })
-        .finally(() => {
-          selectBtn.disabled = false;
-          selectBtn.style.opacity = "1";
-          const isAuthed = hasAuth();
-          const hasFile = input.files && input.files[0];
-          uploadBtn.disabled = !isAuthed || !hasFile;
-          uploadBtn.style.opacity = !isAuthed || !hasFile ? "0.6" : "1";
-        });
+      statusEl.style.color = "#10b981";
+      statusEl.textContent = `🎉 ${year.charAt(0).toUpperCase() + year.slice(1)} year upload successful!`;
+      // Clear the file input after successful upload
+      input.value = "";
+      label.textContent = "No file selected";
+      // Refresh the current files list
+      loadCurrentFiles();
+
+      selectBtn.disabled = false;
+      selectBtn.style.opacity = "1";
+      const hasFile = input.files && input.files[0];
+      uploadBtn.disabled = !hasFile;
+      uploadBtn.style.opacity = !hasFile ? "0.6" : "1";
     });
   }
 
@@ -380,92 +283,115 @@ document.addEventListener("DOMContentLoaded", () => {
   setupFileUpload("third");
   setupFileUpload("fourth");
 
-  // Listen for auth changes to update button states
-  window.addEventListener("storage", (e) => {
-    if (e.key === "auth_token" || e.key === "auth_cache") {
-      const isAuthed = hasAuth();
-
-      // Refresh files list when auth changes
+  // Listen for auth changes to update UI
+  if (window.firebase) {
+    firebase.auth().onAuthStateChanged(() => {
       loadCurrentFiles();
-
-      ["first", "second", "third", "fourth"].forEach((year) => {
-        const uploadBtn = document.getElementById(`upload-${year}-year`);
-        const statusEl = document.getElementById(`${year}-year-status`);
-        const input = document.getElementById(`${year}-year-input`);
-
-        if (uploadBtn && input) {
-          const hasFile = input.files && input.files[0];
-          uploadBtn.disabled = !isAuthed || !hasFile;
-          uploadBtn.style.opacity = !isAuthed || !hasFile ? "0.6" : "1";
-        }
-
-        if (statusEl) {
-          if (!isAuthed) {
-            statusEl.style.color = "#ef4444";
-            statusEl.textContent = "🔒 Login required to upload";
-          } else if (input.files && input.files[0]) {
-            statusEl.style.color = "#10b981";
-            statusEl.textContent = "✅ Ready to upload";
-          } else {
-            statusEl.textContent = "";
-          }
-        }
-      });
-    }
-  });
+    });
+  }
 
   // Delete All Files function
   window.deleteAllFiles = function () {
-    if (
-      !confirm(
-        "Are you sure you want to delete ALL Excel files? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
+    const confirmModal = document.createElement("div");
+    confirmModal.style.cssText = `
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
 
-    if (!hasAuth()) {
-      console.log("Login required to delete files");
-      return;
-    }
+    const isDark = document.body.classList.contains("dark");
+    confirmModal.innerHTML = `
+      <div style="
+        background: ${isDark ? "#2d3748" : "#fff"};
+        color: ${isDark ? "#e2e8f0" : "#1a202c"};
+        padding: 24px;
+        border-radius: 12px;
+        max-width: 520px;
+        width: 90%;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      ">
+        <h3 style="margin: 0 0 8px;">Clear Firestore Data</h3>
+        <p style="margin: 0 0 12px; line-height: 1.5;">
+          This will permanently delete all student records from Firestore for the CSE department.
+          This action cannot be undone.
+        </p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="cancel-clear" class="btn-outline">Cancel</button>
+          <button id="confirm-clear" class="btn-quiet danger">Yes, Delete All</button>
+        </div>
+      </div>
+    `;
 
-    // Update button state during operation
-    const deleteAllBtn = document.getElementById("delete-all-btn");
-    if (deleteAllBtn) {
-      deleteAllBtn.disabled = true;
-      deleteAllBtn.textContent = "🗑️ Deleting...";
-      deleteAllBtn.style.opacity = "0.6";
-    }
+    document.body.appendChild(confirmModal);
 
-  fetch(`${API_BASE}/delete_all_xls`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + localStorage.getItem("auth_token"),
-      },
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok) {
-          console.log("All files deleted successfully");
-          loadCurrentFiles(); // Refresh the list
-        } else {
-          console.error("Delete all failed:", data.error);
-          alert("Failed to delete files: " + (data.error || "Unknown error"));
+    const cleanup = () => confirmModal.remove();
+    confirmModal.querySelector("#cancel-clear").addEventListener("click", cleanup);
+
+    confirmModal.querySelector("#confirm-clear").addEventListener("click", async () => {
+      cleanup();
+
+      const deleteAllBtn = document.getElementById("delete-all-btn");
+      if (deleteAllBtn) {
+        deleteAllBtn.disabled = true;
+        deleteAllBtn.textContent = "🧹 Clearing...";
+        deleteAllBtn.style.opacity = "0.6";
+      }
+
+      // Progress modal
+      const progressModal = document.createElement("div");
+      progressModal.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      `;
+      progressModal.innerHTML = `
+        <div style="
+          background: ${isDark ? "#2d3748" : "#fff"};
+          color: ${isDark ? "#e2e8f0" : "#1a202c"};
+          padding: 20px 24px;
+          border-radius: 10px;
+          min-width: 280px;
+          text-align: center;
+        ">
+          <div style="font-weight: 600; margin-bottom: 6px;">Clearing Firestore...</div>
+          <div id="clear-progress" style="font-size: 14px; opacity: 0.8;">Starting...</div>
+        </div>
+      `;
+      document.body.appendChild(progressModal);
+
+      try {
+        if (window.deleteAllStudentsFromFirestore) {
+          await window.deleteAllStudentsFromFirestore((p) => {
+            const detail = progressModal.querySelector("#clear-progress");
+            if (detail) detail.textContent = `${p.processed}/${p.total} records deleted`;
+          });
         }
-      })
-      .catch((err) => {
-        console.error("Delete all error:", err);
-        alert("Network error: Unable to delete files");
-      })
-      .finally(() => {
-        // Reset button state
+
+        // Clear local list as well
+        localUploadedFiles = [];
+        loadCurrentFiles();
+
+        alert("✅ All Firestore student records deleted successfully.");
+      } catch (err) {
+        console.error("Firestore delete all error:", err);
+        alert("❌ Failed to clear Firestore data. Please try again.");
+      } finally {
+        progressModal.remove();
         if (deleteAllBtn) {
           deleteAllBtn.disabled = false;
-          deleteAllBtn.innerHTML = "🗑️ Delete All";
+          deleteAllBtn.innerHTML = "🧹 Clear Firestore";
           deleteAllBtn.style.opacity = "1";
         }
-      });
+      }
+    });
   };
 
   // Convert Excel files and upload to Firestore
@@ -531,29 +457,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       for (let i = 0; i < filesList.length; i++) {
         const fileInfo = filesList[i];
-        updateProgress(`Processing file ${i + 1} of ${filesList.length}: ${fileInfo.filename}`);
+        updateProgress(`Processing file ${i + 1} of ${filesList.length}: ${fileInfo.filename || fileInfo.name}`);
 
         try {
-          // Fetch the file from the backend
-          const fileResponse = await fetch(`${API_BASE}/download_file/${fileInfo.filename}`, {
-            headers: {
-              Authorization: "Bearer " + localStorage.getItem("auth_token"),
-            }
-          });
-
-          if (!fileResponse.ok) {
-            throw new Error(`Failed to download ${fileInfo.filename}`);
+          const file = fileInfo.fileObject;
+          if (!file) {
+            throw new Error("File object not found");
           }
 
-          const blob = await fileResponse.blob();
-          const file = new File([blob], fileInfo.filename);
-
-          // Process the file
           await new Promise((resolve, reject) => {
             window.handleExcelUploadToFirestore(
               file,
               (progress) => {
-                if (progress.status === 'uploading' && progress.current) {
+                if (progress.status === "uploading" && progress.current) {
                   updateProgress(`File ${i + 1}/${filesList.length}: Uploading ${progress.current}/${progress.total} students...`);
                 }
               },
@@ -567,20 +483,19 @@ document.addEventListener("DOMContentLoaded", () => {
                   }
                   resolve();
                 } else {
-                  reject(new Error(result.error || 'Upload failed'));
+                  reject(new Error(result.error || "Upload failed"));
                 }
               }
             );
           });
-
         } catch (error) {
-          console.error(`Error processing ${fileInfo.filename}:`, error);
-          allErrors.push({ file: fileInfo.filename, error: error.message });
+          console.error(`Error processing ${fileInfo.filename || fileInfo.name}:`, error);
+          allErrors.push({ file: fileInfo.filename || fileInfo.name, error: error.message });
         }
       }
 
       // Remove progress modal
-      const modal = document.getElementById('conversion-progress');
+      const modal = document.getElementById("conversion-progress");
       if (modal) modal.remove();
 
       // Show results
@@ -591,7 +506,10 @@ document.addEventListener("DOMContentLoaded", () => {
         message += `Failed: ${totalFailed}\n`;
       }
       if (allErrors.length > 0) {
-        message += `\nErrors:\n${allErrors.slice(0, 5).map(e => `- ${e.student || e.file}: ${e.error}`).join('\n')}`;
+        message += `\nErrors:\n${allErrors
+          .slice(0, 5)
+          .map((e) => `- ${e.student || e.file}: ${e.error}`)
+          .join("\n")}`;
         if (allErrors.length > 5) {
           message += `\n...and ${allErrors.length - 5} more errors`;
         }
@@ -618,10 +536,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // (Re)usable multi-file upload handler (was missing causing uploads to fail)
   function handleMultipleUpload(files) {
-    if (!hasAuth()) {
-      alert("Login required before uploading.");
-      return;
-    }
     if (!files || files.length === 0) return;
 
     // Filter only valid Excel files
@@ -646,33 +560,28 @@ document.addEventListener("DOMContentLoaded", () => {
     let succeeded = 0;
     let failed = 0;
 
-    const uploadOne = async (file) => {
-      const fd = new FormData();
-      fd.append('file', file, file.name);
-  return fetch(`${API_BASE}/upload_excel`, {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
-        body: fd
-      })
-        .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-        .then((result) => {
-          if (result.ok) {
-            succeeded++;
-          } else {
-            failed++;
-            console.error(
-              "Upload failed for",
-              file.name,
-              result.data && result.data.error,
-            );
-          }
+    const uploadOne = (file) => {
+      const fileInfo = {
+        filename: file.name,
+        name: file.name,
+        size: file.size,
+        size_mb: (file.size / (1024 * 1024)).toFixed(2),
+        uploaded_at: new Date().toISOString(),
+        fileObject: file, // Store the actual file object for later processing
+      };
+
+      localUploadedFiles.push(fileInfo);
+
+      return Promise.resolve()
+        .then(() => {
+          succeeded++;
           if (loadingEl) {
             loadingEl.innerHTML = `<span style="margin-right:8px">⬆️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
           }
         })
         .catch((err) => {
           failed++;
-          console.error("Network/upload error for", file.name, err);
+          console.error("Upload error for", file.name, err);
           if (loadingEl) {
             loadingEl.innerHTML = `<span style=\"margin-right:8px\">⚠️</span>Uploading: ${succeeded + failed}/${excelFiles.length}`;
           }
@@ -749,10 +658,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function triggerSelect(evt) {
     if (evt) evt.stopPropagation();
-    if (!hasAuth()) {
-      alert("Login required to upload files");
-      return;
-    }
     openFileDialog();
   }
   if (browseBtn)

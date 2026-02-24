@@ -246,25 +246,49 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleDarkModeBtn = document.getElementById("toggle-dark-mode");
   const uploadInput = document.getElementById("upload-input");
 
+  const HOD_EMAIL = "hod.cse.srmtrichy@gmail.com";
+  const getAuth = () => {
+    if (!window.firebase || !window.FIREBASE_CONFIG) return null;
+    if (!firebase.apps.length) {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+    }
+    return firebase.auth();
+  };
+  const auth = getAuth();
+  const isHodUser = (user) => !!user && user.email === HOD_EMAIL;
+
   // Initialize theme persistence
   initializeTheme();
 
   if (lockBtn) lockBtn.style.display = "none"; // hide change-password until auth
 
-  // Ensure proper initial state
-  if (authContainer && mainContainer) {
-    if (isAuthCached() && getToken()) {
-      authContainer.style.display = "none";
-      mainContainer.style.display = "";
-      if (lockBtn) lockBtn.style.display = "";
-    } else {
-      authContainer.style.display = "flex";
-      mainContainer.style.display = "none";
-      if (lockBtn) lockBtn.style.display = "none";
+  const setUiAuthed = (authed) => {
+    if (authContainer && mainContainer) {
+      authContainer.style.display = authed ? "none" : "flex";
+      mainContainer.style.display = authed ? "" : "none";
     }
-  } else if (isAuthCached() && getToken()) {
-    // For pages without mainContainer (e.g., upload_excel.html)
-    if (lockBtn) lockBtn.style.display = "";
+    if (lockBtn) lockBtn.style.display = authed ? "" : "none";
+  };
+
+  // Initialize UI state
+  setUiAuthed(false);
+
+  if (auth) {
+    auth.onAuthStateChanged((user) => {
+      if (isHodUser(user)) {
+        setUiAuthed(true);
+        if (window.reloadUploadFiles) window.reloadUploadFiles();
+      } else {
+        if (user) {
+          auth.signOut();
+          if (loginError) {
+            loginError.textContent = "Access restricted to HOD.";
+            loginError.style.display = "block";
+          }
+        }
+        setUiAuthed(false);
+      }
+    });
   }
 
   // ---------- Login ----------
@@ -276,28 +300,18 @@ document.addEventListener("DOMContentLoaded", () => {
       loginError.style.display = "none";
       loginError.textContent = "";
       try {
-        const res = await fetch(`${API_URL}/login`, {
-          method: "POST",
-            headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user, password }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          if (data.token) setToken(data.token);
-          setAuthCache();
-    if (authContainer) authContainer.style.display = "none";
-    if (mainContainer) mainContainer.style.display = "";
-    if (lockBtn) lockBtn.style.display = "";
-          // Reload upload files after successful login
-          if (window.reloadUploadFiles) {
-            window.reloadUploadFiles();
-          }
-        } else {
-          loginError.textContent = data.error || "Login failed";
+        if (!auth) throw new Error("Firebase Auth not initialized");
+        const cred = await auth.signInWithEmailAndPassword(user, password);
+        if (!isHodUser(cred.user)) {
+          await auth.signOut();
+          loginError.textContent = "Access restricted to HOD.";
           loginError.style.display = "block";
+          return;
         }
-      } catch {
-        loginError.textContent = "Could not connect to server";
+        loginError.textContent = "";
+        loginError.style.display = "none";
+      } catch (err) {
+        loginError.textContent = err && err.message ? err.message : "Login failed";
         loginError.style.display = "block";
       }
     });
@@ -306,16 +320,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Logout ----------
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
-      const token = getToken();
-      try {
-        await fetch(`${API_URL}/logout`, {
-          method: "POST",
-          headers: token ? { Authorization: "Bearer " + token } : {},
-        });
-      } catch {}
-      clearToken();
-      clearAuthCache();
       lastResultsPeople = [];
+      if (auth) {
+        try { await auth.signOut(); } catch {}
+      }
       // If we're on a page without the mainContainer (e.g. upload page), redirect to home
       if (!mainContainer) {
         // Avoid redirect loop if already on home
@@ -324,8 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
           window.location.href = "../index.html";
         }
       }
-      if (mainContainer) mainContainer.style.display = "none";
-      if (authContainer) authContainer.style.display = "flex";
+      setUiAuthed(false);
       if (userInput) userInput.value = "";
       if (passInput) passInput.value = "";
   if (lockBtn) lockBtn.style.display = "none";
@@ -362,7 +369,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   if (lockBtn) {
     lockBtn.addEventListener("click", () => {
-      if (!isAuthCached() || !getToken()) {
+      const user = auth ? auth.currentUser : null;
+      if (!isHodUser(user)) {
         alert("Login required to change password");
         return;
       }
@@ -385,25 +393,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const old_password = pwOld.value;
       const new_password = pwNew.value;
       if (pwError) { pwError.textContent = ""; }
-      const token = getToken();
-      if (!token) { if (pwError) pwError.textContent = "Not authenticated"; return; }
+      const user = auth ? auth.currentUser : null;
+      if (!isHodUser(user)) { if (pwError) pwError.textContent = "Not authenticated"; return; }
       try {
-        const res = await fetch(`${API_URL}/change_password`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-          body: JSON.stringify({ old_password, new_password })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          if (pwError) pwError.textContent = data.error || "Update failed";
-          return;
-        }
-  // Success: keep user logged in (tokens remain valid)
-  alert("Password updated successfully.");
-  closePwModal();
+        const credential = firebase.auth.EmailAuthProvider.credential(
+          user.email,
+          old_password,
+        );
+        await user.reauthenticateWithCredential(credential);
+        await user.updatePassword(new_password);
+        alert("Password updated successfully.");
+        closePwModal();
       } catch (err) {
         console.error("Password change error", err);
-        if (pwError) pwError.textContent = "Network error";
+        if (pwError) pwError.textContent = err && err.message ? err.message : "Update failed";
       }
     });
   }
