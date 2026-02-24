@@ -4,7 +4,20 @@ const AUTH_CACHE_MINUTES = 60; // 1 hour
 const THEME_CACHE_KEY = "theme_mode"; // 'dark' | 'light'
 const TOKEN_KEY = "auth_token";
 // const API_URL = "https://birthday-messenger.onrender.com";
-const API_URL = "https://birthday-messenger.vercel.app/";
+const DEFAULT_API_BASE = "http://127.0.0.1:5000";
+const REMOTE_API_BASE = "https://birthday-messenger.vercel.app";
+const resolveApiBase = () => {
+  const stored = localStorage.getItem("api_base");
+  if (stored) return stored.replace(/\/+$/, "");
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get("api");
+  if (fromQuery) return fromQuery.replace(/\/+$/, "");
+  if (window.location && window.location.protocol === "file:") {
+    return DEFAULT_API_BASE;
+  }
+  return REMOTE_API_BASE;
+};
+const API_URL = resolveApiBase();
 
 // ---------- State (Results Cache) ----------
 let lastResultsPeople = [];

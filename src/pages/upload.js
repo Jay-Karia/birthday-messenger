@@ -1,7 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Static API base (remote)
-  // const API_BASE = 'https://birthday-messenger.onrender.com';
-  const API_BASE = "https://birthday-messenger.vercel.app/";
+  // API base resolution (local by default for Electron/file://)
+  const DEFAULT_API_BASE = "http://127.0.0.1:5000";
+  const REMOTE_API_BASE = "https://birthday-messenger.vercel.app";
+  const resolveApiBase = () => {
+    const stored = localStorage.getItem("api_base");
+    if (stored) return stored.replace(/\/+$/, "");
+    const params = new URLSearchParams(window.location.search);
+    const fromQuery = params.get("api");
+    if (fromQuery) return fromQuery.replace(/\/+$/, "");
+    if (window.location && window.location.protocol === "file:") {
+      return DEFAULT_API_BASE;
+    }
+    return REMOTE_API_BASE;
+  };
+  const API_BASE = resolveApiBase();
 
   // Auth helper function
   function hasAuth() {
@@ -482,6 +494,17 @@ document.addEventListener("DOMContentLoaded", () => {
           let msg = `✅ Success! Consolidated ${data.rows || 0} records.`;
           if (data.skipped_count) {
             msg += ` Skipped ${data.skipped_count} (missing DOB).`;
+          }
+          if (data.firestore) {
+            if (data.firestore.ok) {
+              msg += ` Firestore: uploaded ${data.firestore.uploaded || 0}`;
+              if (data.firestore.skipped) {
+                msg += `, skipped ${data.firestore.skipped}`;
+              }
+              msg += ".";
+            } else {
+              msg += ` Firestore upload failed: ${data.firestore.message || "Unknown error"}.`;
+            }
           }
           alert(msg);
         } else {
