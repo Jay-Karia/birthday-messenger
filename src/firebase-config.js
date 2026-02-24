@@ -1,20 +1,12 @@
-// Firebase configuration
+// Firebase configuration using environment variables
 const firebaseConfig = {
-
-  apiKey: "AIzaSyBScjJZIz3mnUyYqv79gW68wrjXu3fMoto",
-
-  authDomain: "birthday-messenger-757af.firebaseapp.com",
-
-  projectId: "birthday-messenger-757af",
-
-  storageBucket: "birthday-messenger-757af.firebasestorage.app",
-
-  messagingSenderId: "5708850157",
-
-  appId: "1:5708850157:web:30f79a0b125fa53da4bde4"
-
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
 };
-
 
 // Export for use in other files
 window.FIREBASE_CONFIG = firebaseConfig;

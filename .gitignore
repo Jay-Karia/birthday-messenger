@@ -93,3 +93,7 @@ out/
 dist
 
 data
+
+# Environment variables
+.env.local
+.env*.local
