@@ -468,65 +468,152 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   };
 
-  // Convert to CSV function
-  window.convertToCSV = function () {
+  // Convert Excel files and upload to Firestore
+  window.convertToCSV = async function () {
     if (!hasAuth()) {
-      console.log("Login required to convert files");
+      alert("Login required to convert files");
+      return;
+    }
+
+    // Initialize Firebase if not already done
+    if (window.initializeFirebase) {
+      window.initializeFirebase();
+    }
+
+    // Get all uploaded files
+    const filesList = window.__currentUploadFiles || [];
+    if (filesList.length === 0) {
+      alert("No files uploaded yet. Please upload Excel files first.");
       return;
     }
 
     // Update button state during operation
     const convertBtn = document.getElementById("convert-btn");
+    const originalBtnText = convertBtn ? convertBtn.innerHTML : "";
     if (convertBtn) {
       convertBtn.disabled = true;
-      convertBtn.innerHTML = "⏳ Converting...";
+      convertBtn.innerHTML = "⏳ Processing...";
       convertBtn.style.opacity = "0.6";
     }
 
-  fetch(`${API_BASE}/csvdump`, {
-      method: 'POST',
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + localStorage.getItem("auth_token"),
-      },
-    })
-      .then(async (res) => {
-        const data = await res.json();
-        if (res.ok) {
-          console.log("Files converted successfully");
-          let msg = `✅ Success! Consolidated ${data.rows || 0} records.`;
-          if (data.skipped_count) {
-            msg += ` Skipped ${data.skipped_count} (missing DOB).`;
-          }
-          if (data.firestore) {
-            if (data.firestore.ok) {
-              msg += ` Firestore: uploaded ${data.firestore.uploaded || 0}`;
-              if (data.firestore.skipped) {
-                msg += `, skipped ${data.firestore.skipped}`;
-              }
-              msg += ".";
-            } else {
-              msg += ` Firestore upload failed: ${data.firestore.message || "Unknown error"}.`;
+    try {
+      // Show progress modal or message
+      const progressMsg = document.createElement('div');
+      progressMsg.id = 'conversion-progress';
+      const isDark = document.body.classList.contains('dark');
+      progressMsg.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: ${isDark ? '#2d3748' : 'white'};
+        color: ${isDark ? '#e2e8f0' : '#1a202c'};
+        padding: 24px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 300px;
+        text-align: center;
+      `;
+      progressMsg.innerHTML = `<p style="margin:0;font-weight:600;">Processing Excel files...</p><p id="progress-detail" style="margin:8px 0 0;font-size:14px;color:${isDark ? '#a0aec0' : '#666'};">Starting...</p>`;
+      document.body.appendChild(progressMsg);
+
+      const updateProgress = (msg) => {
+        const detail = document.getElementById('progress-detail');
+        if (detail) detail.textContent = msg;
+      };
+
+      // Process each Excel file
+      let totalStudents = 0;
+      let totalSuccess = 0;
+      let totalFailed = 0;
+      const allErrors = [];
+
+      for (let i = 0; i < filesList.length; i++) {
+        const fileInfo = filesList[i];
+        updateProgress(`Processing file ${i + 1} of ${filesList.length}: ${fileInfo.filename}`);
+
+        try {
+          // Fetch the file from the backend
+          const fileResponse = await fetch(`${API_BASE}/download_file/${fileInfo.filename}`, {
+            headers: {
+              Authorization: "Bearer " + localStorage.getItem("auth_token"),
             }
+          });
+
+          if (!fileResponse.ok) {
+            throw new Error(`Failed to download ${fileInfo.filename}`);
           }
-          alert(msg);
-        } else {
-          console.error("Conversion failed:", data.error);
-          alert("Failed to convert files: " + (data.error || "Unknown error"));
+
+          const blob = await fileResponse.blob();
+          const file = new File([blob], fileInfo.filename);
+
+          // Process the file
+          await new Promise((resolve, reject) => {
+            window.handleExcelUploadToFirestore(
+              file,
+              (progress) => {
+                if (progress.status === 'uploading' && progress.current) {
+                  updateProgress(`File ${i + 1}/${filesList.length}: Uploading ${progress.current}/${progress.total} students...`);
+                }
+              },
+              (result) => {
+                if (result.success) {
+                  totalStudents += (result.results.success + result.results.failed);
+                  totalSuccess += result.results.success;
+                  totalFailed += result.results.failed;
+                  if (result.results.errors.length > 0) {
+                    allErrors.push(...result.results.errors);
+                  }
+                  resolve();
+                } else {
+                  reject(new Error(result.error || 'Upload failed'));
+                }
+              }
+            );
+          });
+
+        } catch (error) {
+          console.error(`Error processing ${fileInfo.filename}:`, error);
+          allErrors.push({ file: fileInfo.filename, error: error.message });
         }
-      })
-      .catch((err) => {
-        console.error("Conversion error:", err);
-        alert("Network error: Unable to convert files");
-      })
-      .finally(() => {
-        // Reset button state
-        if (convertBtn) {
-          convertBtn.disabled = false;
-          convertBtn.innerHTML = "🔄 Convert to CSV";
-          convertBtn.style.opacity = "1";
+      }
+
+      // Remove progress modal
+      const modal = document.getElementById('conversion-progress');
+      if (modal) modal.remove();
+
+      // Show results
+      let message = `✅ Conversion Complete!\n\n`;
+      message += `Total Students: ${totalStudents}\n`;
+      message += `Successfully uploaded to Firestore: ${totalSuccess}\n`;
+      if (totalFailed > 0) {
+        message += `Failed: ${totalFailed}\n`;
+      }
+      if (allErrors.length > 0) {
+        message += `\nErrors:\n${allErrors.slice(0, 5).map(e => `- ${e.student || e.file}: ${e.error}`).join('\n')}`;
+        if (allErrors.length > 5) {
+          message += `\n...and ${allErrors.length - 5} more errors`;
         }
-      });
+      }
+
+      alert(message);
+
+    } catch (error) {
+      console.error("Conversion error:", error);
+      alert("Error during conversion: " + error.message);
+
+      // Remove progress modal if it exists
+      const modal = document.getElementById('conversion-progress');
+      if (modal) modal.remove();
+    } finally {
+      // Reset button state
+      if (convertBtn) {
+        convertBtn.disabled = false;
+        convertBtn.innerHTML = originalBtnText || "Convert";
+        convertBtn.style.opacity = "1";
+      }
+    }
   };
 
   // (Re)usable multi-file upload handler (was missing causing uploads to fail)

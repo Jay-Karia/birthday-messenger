@@ -5,10 +5,20 @@
     <title>Birthday Messanger</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="script-src 'self' 'unsafe-inline';"
+      content="script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://birthday-messenger.vercel.app http://127.0.0.1:5000;"
     />
     <link rel="stylesheet" type="text/css" href="./index.css" />
     <link rel="stylesheet" type="text/css" href="./styles/upload.css" />
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- SheetJS for Excel parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Firebase Config -->
+    <script src="./firebase-config.js"></script>
   </head>
   <body>
       <!-- Toggle Theme mode -->
@@ -147,7 +157,7 @@
                   style="display: none"
                   onclick="convertToCSV()"
                 >
-                  Convert
+                  🔥 Upload to Firestore
                 </button>
                 <button
                   id="delete-all-btn"
@@ -221,6 +231,7 @@
     </footer>
 
     <script src="renderer.js"></script>
+    <script src="./excel-to-firestore.js"></script>
     <script src="./pages/upload.js"></script>
   </body>
 </html>
