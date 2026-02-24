@@ -288,6 +288,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (authContainer) authContainer.style.display = "none";
     if (mainContainer) mainContainer.style.display = "";
     if (lockBtn) lockBtn.style.display = "";
+          // Reload upload files after successful login
+          if (window.reloadUploadFiles) {
+            window.reloadUploadFiles();
+          }
         } else {
           loginError.textContent = data.error || "Login failed";
           loginError.style.display = "block";

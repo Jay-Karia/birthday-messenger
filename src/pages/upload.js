@@ -31,6 +31,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load current files on page load
   loadCurrentFiles();
 
+  // Expose loadCurrentFiles globally so it can be called after login
+  window.reloadUploadFiles = loadCurrentFiles;
+
   // Function to load and display current files
   function loadCurrentFiles() {
     const loadingEl = document.getElementById("files-loading");
