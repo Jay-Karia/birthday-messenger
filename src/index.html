@@ -8,6 +8,7 @@
       content="script-src 'self' 'unsafe-inline';"
     />
     <link rel="stylesheet" type="text/css" href="./index.css" />
+    <link rel="stylesheet" type="text/css" href="./styles/upload.css" />
   </head>
   <body>
       <!-- Toggle Theme mode -->
@@ -39,18 +40,6 @@
         </span>
       </button>
 
-      <!-- Upload Button -->
-      <a href="./pages/upload.html">
-        <button id="upload-btn" title="Upload Data" aria-label="Upload">
-          <span style="vertical-align: middle">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle">
-         <path d="M12 16V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-         <path d="M7 9l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-         <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </span>
-        </button>
-      </a>
       <button id="lock-btn" title="Change Password" aria-label="Change Password">
         <span style="vertical-align: middle">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -130,36 +119,75 @@
           <img src="../public/srm-logo.png" alt="SRM Logo" class="srm-logo-small" />
           <strong style="font-size: 1.2rem;">SRM Institute of Science and Technology, Trichy</strong>
         </div>
-        <div class="birthday-container">
-          <label for="birthday" id="birthday-label">Select a birthday:</label>
-          <div class="birthday-box">
-            <input type="date" id="birthday" name="birthday" />
-            <button id="find-btn" type="button">
-              <span class="label">Find</span>
-            </button>
-          </div>
-        </div>
 
-        <div id="results-container" class="results"></div>
+        <!-- Hidden file input for Excel upload -->
+        <input
+          type="file"
+          id="upload-input"
+          style="display: none"
+          accept=".xlsx,.xls"
+          multiple
+        />
 
-        <div
-          style="
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 20px;
-          "
-        >
-          <button id="clear-results-btn" type="button">
-            <span class="icon" aria-hidden="true">✕</span>
-            Clear
-          </button>
-
-          <button id="send-btn" type="button">
-            <span class="label">Send</span>
-          </button>
-        </div>
+        <main class="upload-main">
+          <section class="files-shell">
+            <header class="files-shell__header">
+              <div class="files-shell__titles">
+                <h2>Excel Data Sources</h2>
+                <p>
+                  Upload and manage the Excel workbooks used to generate the
+                  consolidated birthday dataset.
+                </p>
+              </div>
+              <div class="files-shell__actions">
+                <div id="file-count" class="badge-pill">0 files</div>
+                <button
+                  id="convert-btn"
+                  class="btn-quiet success"
+                  style="display: none"
+                  onclick="convertToCSV()"
+                >
+                  Convert
+                </button>
+                <button
+                  id="delete-all-btn"
+                  class="btn-quiet danger"
+                  style="display: none"
+                  onclick="deleteAllFiles()"
+                >
+                  Delete All
+                </button>
+              </div>
+            </header>
+            <div
+              class="drop-area"
+              id="drop-area"
+              tabindex="0"
+              aria-label="Upload Excel files by browsing or dragging"
+            >
+              <div class="drop-area__inner">
+                <strong>Select or drop .xlsx / .xls files</strong>
+                <span class="hint"
+                  >Files are stored securely and can be converted to a single
+                  CSV</span
+                >
+                <button type="button" class="btn-outline" id="browse-btn">
+                  Browse Files
+                </button>
+              </div>
+            </div>
+            <div class="list-wrapper">
+              <div id="files-loading" class="loading-row">Loading files...</div>
+              <div id="no-files" class="empty-row" style="display: none">
+                <p class="empty-title">No files uploaded</p>
+                <p class="empty-sub">
+                  Use the button above or drag-and-drop to begin.
+                </p>
+              </div>
+              <div id="files-list" class="files-list" style="display: none"></div>
+            </div>
+          </section>
+        </main>
       </div>
     </div>
     <!-- END content-wrapper -->
@@ -193,5 +221,6 @@
     </footer>
 
     <script src="renderer.js"></script>
+    <script src="./pages/upload.js"></script>
   </body>
 </html>

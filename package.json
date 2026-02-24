@@ -24,21 +24,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.8.3",
     "@electron-forge/maker-deb": "^7.8.3",
-    "@electron-forge/maker-rpm": "^7.8.3","productName": "birthday-messenger",
-  "version": "0.1.2",
-  "description": "Send emails on birthdays.",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-packager . --icon=src/icons/icon.ico --out=out --overwrite",
-    "make": "electron-forge make --icon=src/icons/icon.ico",
-    "publish": "electron-forge publish"
-  },
-  "keywords": [],
-  "author": {
-    "name": "Jay-Karia",
-    "email": "jay.sanjay.karia@gmail.com"
-  },
+    "@electron-forge/maker-rpm": "^7.8.3",
     "@electron-forge/maker-squirrel": "^7.8.3",
     "@electron-forge/maker-zip": "^7.8.3",
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",

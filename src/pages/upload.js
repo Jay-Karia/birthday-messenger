@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // API base resolution (local by default for Electron/file://)
-  const DEFAULT_API_BASE = "http://127.0.0.1:5000";
+  const DEFAULT_API_BASE = "https://birthday-messenger.vercel.app";
   const REMOTE_API_BASE = "https://birthday-messenger.vercel.app";
   const resolveApiBase = () => {
     const stored = localStorage.getItem("api_base");
